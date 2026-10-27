@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f3f6f1;
+    --card: #ffffff;
+    --ink: #17241b;
+    --ink-2: #4b5a4f;
+    --ink-3: #7d8a80;
+    --line: #dfe6dd;
+    --leaf: #2f6b3a;
+    --leaf-dark: #23522c;
+    --sprout: #cfe5c3;
+    --track: #e8eee5;
+    --sun: #e0a526;
+    --clay: #b5432f;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: "Archivo", system-ui, sans-serif; font-size: 15px; line-height: 1.4; }
+  button, input { font-family: inherit; }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+  .num { font-stretch: 75%; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .hidden { display: none !important; }
+
+  /* Top bar */
+  .bar { position: sticky; top: 0; z-index: 20; background: var(--leaf-dark); color: #fff; }
+  .bar-in { max-width: 680px; margin: 0 auto; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .brand { font-weight: 800; font-size: 17px; font-stretch: 112%; flex: 1; letter-spacing: .005em; }
+  .brand small { display: block; font-weight: 500; font-size: 12px; font-stretch: 100%; opacity: .75; margin-top: 1px; }
+  .lang { display: flex; background: rgba(255,255,255,.14); border-radius: 999px; padding: 3px; }
+  .lang button { background: transparent; color: #fff; border: 0; border-radius: 999px; padding: 6px 11px; font-size: 13px; font-weight: 700; cursor: pointer; letter-spacing: .03em; opacity: .75; }
+  .lang button.on { background: #fff; color: var(--leaf-dark); opacity: 1; }
+  .back { background: rgba(255,255,255,.14); color: #fff; border: 0; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+  main { max-width: 680px; margin: 0 auto; padding: 18px 16px 120px; }
+  .sec-title { font-size: 15px; font-weight: 700; margin: 26px 0 10px; color: var(--ink); }
+  .sec-title span { font-weight: 500; color: var(--ink-3); margin-left: 6px; }
+
+  /* Season strip (the hero) */
+  .season { background: var(--leaf); color: #fff; border-radius: var(--radius); padding: 18px 18px 16px; }
+  .season-top { display: block; }
+  .season-wk { font-size: 48px; line-height: .9; white-space: nowrap; }
+  .season-wk small { font-size: 18px; font-weight: 600; font-stretch: 100%; opacity: .8; margin-left: 4px; }
+  .season-dates { margin-top: 8px; font-size: 14px; opacity: .9; }
+  .season-dates b { font-size: 15px; opacity: 1; font-weight: 700; margin-right: 6px; }
+  .strip { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-top: 16px; }
+  .seg { height: 10px; border-radius: 3px; background: rgba(255,255,255,.18); }
+  .seg.done { background: rgba(255,255,255,.62); }
+  .seg.now { background: var(--sun); }
+  .strip-lbl { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-top: 5px; font-size: 11px; opacity: .7; text-align: center; font-variant-numeric: tabular-nums; }
+  .strip-lbl .now { opacity: 1; font-weight: 700; color: #fff; }
+  .season-foot { display: flex; justify-content: space-between; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.16); font-size: 13.5px; }
+  .season-foot b { font-size: 20px; display: block; }
+
+  /* Manager picker */
+  .people { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .who { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 10px 12px; text-align: center; cursor: pointer; color: var(--ink); }
+  .who:hover { border-color: var(--leaf); }
+  .who:active { transform: scale(.98); }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; margin: 0 auto 8px; display: grid; place-items: center; background: var(--sprout); color: var(--leaf-dark); font-weight: 800; font-size: 18px; font-stretch: 112%; }
+  .who b { display: block; font-size: 15.5px; }
+  .who span { font-size: 12.5px; color: var(--ink-3); }
+
+  /* Race track */
+  .board { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 18px 6px; overflow: hidden; }
+  .raxis { position: relative; height: 22px; margin: 4px 14px 0 14px; font-size: 11px; font-weight: 700; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+  .raxis span { position: absolute; top: 4px; transform: translateX(-50%); white-space: nowrap; }
+  .raxis span.goal { color: var(--sun); transform: translateX(-85%); }
+  .lane { padding: 10px 0 8px; border-top: 1px solid var(--line); }
+  .lane:nth-of-type(odd) { }
+  .lhead { display: flex; align-items: baseline; gap: 10px; }
+  .pos { width: 20px; font-size: 15px; color: var(--ink-3); text-align: center; }
+  .lane.lead .pos { color: var(--sun); }
+  .lname { flex: 1; font-weight: 650; font-size: 15.5px; }
+  .lscore { font-size: 20px; line-height: 1; }
+  .lscore small { font-size: 12.5px; font-weight: 500; font-stretch: 100%; color: var(--ink-3); margin-left: 2px; }
+  .rtrack { position: relative; height: 38px; margin: 2px 14px 0 14px; }
+  .rgrid { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed var(--line); }
+  .rbar { position: absolute; left: 0; right: 0; bottom: 6px; height: 6px; border-radius: 3px; background: var(--track); }
+  .rfill { position: absolute; left: 0; bottom: 6px; height: 6px; border-radius: 3px; background: var(--leaf); width: 0; transition: width 1.6s cubic-bezier(.2,.8,.2,1); }
+  .rpace { position: absolute; bottom: 2px; height: 14px; width: 3px; margin-left: -1px; background: var(--sun); border-radius: 2px; }
+  .rflag { position: absolute; bottom: 2px; width: 12px; height: 28px; margin-left: -1px; border-left: 2px solid var(--ink); }
+  .rflag::after { content: ""; position: absolute; left: 0; top: 0; width: 14px; height: 14px;
+    background: conic-gradient(var(--ink) 25%, #fff 0 50%, var(--ink) 0 75%, #fff 0); background-size: 7px 7px; border: 1px solid var(--ink); }
+  .runner { position: absolute; bottom: 8px; left: 0; width: 28px; height: 28px; margin-left: -14px; color: var(--leaf-dark); transition: left 1.6s cubic-bezier(.2,.8,.2,1); }
+  .runner svg { width: 100%; height: 100%; display: block; }
+  .lane.lead .runner { color: var(--sun); }
+  .runner.go svg { animation: bob .32s ease-in-out infinite alternate; }
+  @keyframes bob { from { transform: translateY(0) rotate(-3deg); } to { transform: translateY(-3px) rotate(3deg); } }
+  @media (prefers-reduced-motion: reduce) { .rfill, .runner { transition: none; } .runner.go svg { animation: none; } }
+  .crown { margin-left: 4px; font-size: 14px; }
+  .lmeta { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-3); padding-left: 30px; }
+  .lmeta .ahead { color: var(--leaf); font-weight: 600; }
+  .lmeta .behind { color: var(--clay); font-weight: 600; }
+  .key { display: flex; gap: 16px; font-size: 12.5px; color: var(--ink-3); margin: 10px 2px 0; flex-wrap: wrap; }
+  .key i { display: inline-block; vertical-align: -1px; margin-right: 6px; }
+  .k-fill { width: 14px; height: 10px; border-radius: 3px; background: var(--leaf); }
+  .k-pace { width: 3px; height: 14px; border-radius: 2px; background: var(--sun); vertical-align: -3px !important; }
+  .k-fin { width: 12px; height: 12px; border: 1px solid var(--ink); background: conic-gradient(var(--ink) 25%, #fff 0 50%, var(--ink) 0 75%, #fff 0); background-size: 6px 6px; }
+
+  /* Home tabs + performance heatmaps */
+  .tabs { display: flex; gap: 6px; margin: 26px 0 12px; background: var(--track); border-radius: 12px; padding: 4px; }
+  .tab { flex: 1; border: 0; background: transparent; border-radius: 9px; padding: 10px 8px; font-size: 14.5px; font-weight: 700; color: var(--ink-2); cursor: pointer; }
+  .tab.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(23,36,27,.12); }
+  .perf-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 0 12px; margin-bottom: 14px; }
+  .perf-card h3 { margin: 0; padding: 0 16px; font-size: 16px; font-stretch: 112%; font-weight: 750; }
+  .perf-card p { margin: 3px 16px 10px; font-size: 12.5px; color: var(--ink-3); }
+  .heat { overflow-x: auto; padding: 0 16px 0 0; }
+  .heat table { border-collapse: separate; border-spacing: 3px; font-variant-numeric: tabular-nums; }
+  .heat th { font-size: 11px; font-weight: 600; color: var(--ink-3); padding: 0 0 4px; white-space: nowrap; text-align: center; line-height: 1.25; }
+  .heat th span { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+  .heat td { min-width: 46px; height: 30px; text-align: center; border-radius: 6px; font-size: 12.5px; font-weight: 650; }
+  .heat td.nm { position: sticky; left: 0; z-index: 1; background: var(--card); text-align: left; font-size: 13.5px; padding: 0 8px 0 16px; min-width: 92px; border-radius: 0; box-shadow: 8px 0 8px -6px var(--card); }
+  .heat td.ok { background: #cfe5c3; color: var(--leaf-dark); }
+  .heat td.miss { background: #f3d4cc; color: var(--clay); }
+  .heat td.flag { position: relative; cursor: help; }
+  .heat td.flag::after { content: ''; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: var(--sun); }
+  .metas { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 16px 10px; font-size: 12px; color: var(--ink-3); align-items: center; }
+  .metas i { font-style: normal; font-weight: 600; margin-right: 2px; }
+  .metas span.chip2 { background: #eef3ea; border-radius: 999px; padding: 2px 9px; color: var(--ink-2, var(--ink-3)); }
+  .metas span.chip2 b { color: var(--leaf-dark); margin-left: 3px; }
+  .heat td.none { background: #f3f6f1; color: #b4bdb5; font-weight: 500; }
+  .perf-key { display: flex; gap: 14px; font-size: 12.5px; color: var(--ink-3); margin: 10px 16px 0; flex-wrap: wrap; }
+  .perf-key i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+
+  /* Review screen */
+  .weeks { position: sticky; top: 56px; z-index: 10; background: var(--paper); margin: -18px -16px 12px; padding: 12px 16px 10px; border-bottom: 1px solid var(--line); }
+  .weeks-row { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+  .weeks-row::-webkit-scrollbar { display: none; }
+  .chip { flex: 0 0 auto; border: 1px solid var(--line); background: var(--card); color: var(--ink-2); border-radius: 999px; padding: 7px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+  .chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .chip.cur:not(.on) { border-color: var(--sun); color: var(--ink); }
+  .weeks-note { font-size: 12.5px; color: var(--ink-3); margin-top: 8px; }
+
+  .emp { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 14px; overflow: hidden; }
+  .emp-h { display: flex; align-items: baseline; justify-content: space-between; padding: 14px 16px 10px; }
+  .emp-h b { font-size: 18px; font-stretch: 112%; font-weight: 750; }
+  .emp-h .num { font-size: 22px; color: var(--leaf); }
+  .emp-h .num small { font-size: 12.5px; font-weight: 500; font-stretch: 100%; color: var(--ink-3); margin-left: 3px; }
+  .task { padding: 12px 16px 14px; border-top: 1px solid var(--line); }
+  .t-top { display: flex; justify-content: space-between; gap: 10px; }
+  .t-name { font-weight: 650; font-size: 15px; }
+  .t-pts { flex: 0 0 auto; align-self: flex-start; font-size: 15px; color: var(--leaf); font-weight: 750; background: #e3f0dc; border-radius: 999px; padding: 3px 11px; white-space: nowrap; }
+  .t-how { font-size: 13px; color: var(--ink-2); margin-top: 3px; }
+  .t-when { font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .ctrl { display: flex; gap: 8px; margin-top: 10px; align-items: stretch; }
+  .seg2 { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg2 button { border: 0; background: var(--card); padding: 10px 16px; font-size: 14.5px; font-weight: 650; color: var(--ink-2); cursor: pointer; min-width: 64px; }
+  .seg2 button + button { border-left: 1px solid var(--line); }
+  .seg2 button.yes { background: var(--leaf); color: #fff; }
+  .seg2 button.no { background: var(--clay); color: #fff; }
+  .manual { width: 92px; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; font-size: 16px; font-weight: 650; text-align: center; color: var(--ink); background: var(--card); }
+  .manual::placeholder { color: var(--ink-3); font-weight: 500; font-size: 14px; }
+  .manual.set { border-color: var(--leaf); background: #f3f9f1; }
+  .t-hint { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; }
+
+  .savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(255,255,255,.96); border-top: 1px solid var(--line); backdrop-filter: blur(6px); }
+  .savebar-in { max-width: 680px; margin: 0 auto; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); display: flex; gap: 12px; align-items: center; }
+  .savebar-in span { flex: 1; font-size: 14px; color: var(--ink-2); }
+  .savebar-in button { background: var(--leaf); color: #fff; border: 0; border-radius: 12px; padding: 13px 26px; font-size: 15.5px; font-weight: 700; cursor: pointer; }
+  .savebar-in button:disabled { background: #a9bfa9; cursor: default; }
+
+  .empty { text-align: center; color: var(--ink-3); padding: 34px 12px; }
+  .err { background: #fbeeea; color: var(--clay); border-radius: var(--radius); padding: 14px 16px; font-size: 14px; }
+  .skel { height: 120px; border-radius: var(--radius); background: linear-gradient(90deg, #e9eee7 0%, #f3f6f1 50%, #e9eee7 100%); background-size: 200% 100%; animation: sh 1.2s infinite linear; margin-bottom: 12px; }
+  @keyframes sh { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 12px; font-size: 14px; z-index: 40; }
+  @media (prefers-reduced-motion: reduce) { .skel { animation: none; } }
+  @media (max-width: 380px) { .season-wk { font-size: 40px; } .people { gap: 8px; } }
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="bar-in">
+  <div class="brand" id="brand">CTG Dash App<small id="brandSub"></small></div>
+  <div class="lang" role="group" aria-label="Idioma / Language"><button id="langEs" onclick="setLang('es')">ES</button><button id="langEn" onclick="setLang('en')">EN</button></div>
+  <button class="back hidden" id="backBtn" onclick="goHome()" data-i18n="home">Inicio</button>
+</div></div>
+
+<main>
+  <!-- Home -->
+  <section id="home">
+    <div id="season"><div class="skel"></div></div>
+
+    <div class="sec-title" data-i18n="rateThisWeek">Calificar esta semana</div>
+    <div class="people" id="managers"></div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab on" id="tabRace" role="tab" onclick="showTab('race')" data-i18n="raceTab">La carrera</button>
+      <button class="tab" id="tabPerf" role="tab" onclick="showTab('perf')" data-i18n="perfTab">Rendimiento</button>
+    </div>
+    <span id="teamLine" class="hidden"></span>
+    <div id="raceView"><div id="board"><div class="skel"></div></div></div>
+    <div id="perfView" class="hidden"></div>
+  </section>
+
+  <!-- Review -->
+  <section id="review" class="hidden">
+    <div class="weeks">
+      <div class="weeks-row" id="weekChips"></div>
+      <div class="weeks-note" id="weekNote"></div>
+    </div>
+    <div id="list"></div>
+  </section>
+</main>
+
+<div class="savebar hidden" id="saveBar"><div class="savebar-in">
+  <span id="changeCount"></span>
+  <button id="saveBtn" onclick="save()" disabled data-i18n="save">Guardar</button>
+</div></div>
+
+<script>
+  var S = { init: null, manager: null, week: 1, groups: [], vals: {}, dirty: {}, review: false, overview: null, perf: null };
+
+  // ---------- Language (ES / EN) ----------
+  var I18N = {
+    es: {
+      brandSub: 'Programa de millas', scoring: 'Calificando', home: 'Inicio',
+      rateThisWeek: 'Calificar esta semana', rateTasks: 'Calificar tareas',
+      raceTab: 'La carrera', perfTab: 'Rendimiento',
+      wk: 'Sem {n}',
+      errNames: 'No se pudieron cargar los nombres: ', errSummary: 'No se pudo cargar el resumen: ',
+      errPerf: 'No se pudo cargar el rendimiento: ', errTasks: 'No se pudieron cargar las tareas: ',
+      noOrders: 'Sin datos de órdenes.', noPlanting: 'Sin datos de plantación.', noPlugs: 'Sin datos de plugs.', noLabels: 'Sin datos de etiquetas.',
+      hoursWorked: '{h} h trabajadas',
+      noteFew: 'Pocas horas esta semana (solo {h} h). Con tan pocas horas el % se dispara o se hunde y no es confiable.',
+      noteHigh: '{p}% es muy alto: revisa si las cantidades o las horas se registraron bien.',
+      cardOrders: 'Sacado de órdenes', cardPlanting: 'Plantación terminada', cardPlugs: 'Plantación de plugs', cardLabels: 'Etiquetas',
+      ordersDesc: 'Segundos por planta, promedio de los 2 días de la semana. Menos es mejor. Meta: {g} seg. Últimas 12 semanas.',
+      pctDesc: '% de la velocidad meta (horas a velocidad meta ÷ horas con meta). Semana de lunes a sábado. Últimas 12 semanas. Toca un punto amarillo para ver por qué el dato no es confiable.',
+      keyGoalMet: 'Meta lograda ({g} o menos)', keyAbove: 'Arriba de la meta', keyFull: '100% o más', keyUnder: 'Menos de 100%',
+      goalPerHour: 'Meta por hora ({u}):', unitPlants: 'plantas', unitPlugs: 'plugs', unitLabels: 'etiquetas',
+      season: 'Semana {w}', notStarted: 'No ha comenzado', of10: 'de 10', daysLeft: 'días restantes',
+      teamMillas: 'millas equipo', thisWeek: 'esta semana', ends: 'termina',
+      people: '{n} personas', noPeople: 'No se encontraron personas en la pestaña DASH.',
+      goalWord: 'META', onPace: 'Al ritmo', ahead: '{n} adelante del ritmo', behind: '{n} atrás del ritmo',
+      laneTitle: '{name}: {t} de {g} millas',
+      keyEarned: 'Millas acumuladas', keyPace: 'Dónde deberían estar después de la semana {w}', keyGoal: 'Meta: 1,000 = 4 hr de PTO',
+      confirmLeave: 'Tienes calificaciones sin guardar. ¿Salir sin guardar?',
+      confirmWeek: 'Tienes calificaciones sin guardar. ¿Cambiar de semana sin guardar?',
+      curWeek: 'Semana actual', pastWeek: 'Semana pasada', nextWeek: 'Semana próxima', starts: ', inicia {d}',
+      millas: '{n} millas', when: 'Cuándo: ', yes: 'Sí', no: 'No', manual: 'Manual', millasFor: 'Millas para {task}',
+      noTasks: 'No hay tareas asignadas a {m} en la pestaña DASH.',
+      noChanges: 'Sin cambios', unsavedOne: '{n} calificación sin guardar', unsavedMany: '{n} calificaciones sin guardar',
+      save: 'Guardar', saving: 'Guardando…', savedOne: 'Guardada {n} calificación en DASH', savedMany: 'Guardadas {n} calificaciones en DASH',
+      notSaved: 'No se guardó: '
+    },
+    en: {
+      brandSub: 'Millas program', scoring: 'Scoring', home: 'Home',
+      rateThisWeek: 'Score this week', rateTasks: 'Score tasks',
+      raceTab: 'The race', perfTab: 'Performance',
+      wk: 'Wk {n}',
+      errNames: 'Could not load the names: ', errSummary: 'Could not load the summary: ',
+      errPerf: 'Could not load performance: ', errTasks: 'Could not load the tasks: ',
+      noOrders: 'No order data.', noPlanting: 'No planting data.', noPlugs: 'No plug data.', noLabels: 'No label data.',
+      hoursWorked: '{h} h worked',
+      noteFew: 'Few hours this week (only {h} h). With so few hours the % spikes or collapses and is not reliable.',
+      noteHigh: '{p}% is very high: check that the quantities and hours were recorded correctly.',
+      cardOrders: 'Order pulling', cardPlanting: 'Finished planting', cardPlugs: 'Plug planting', cardLabels: 'Labels',
+      ordersDesc: 'Seconds per plant, averaged over the 2 days of the week. Lower is better. Goal: {g} sec. Last 12 weeks.',
+      pctDesc: '% of goal speed (hours at goal speed ÷ hours with a goal). Week runs Monday to Saturday. Last 12 weeks. Tap a yellow dot to see why the number is not reliable.',
+      keyGoalMet: 'Goal met ({g} or less)', keyAbove: 'Above the goal', keyFull: '100% or more', keyUnder: 'Under 100%',
+      goalPerHour: 'Goal per hour ({u}):', unitPlants: 'plants', unitPlugs: 'plugs', unitLabels: 'labels',
+      season: 'Week {w}', notStarted: 'Not started yet', of10: 'of 10', daysLeft: 'days left',
+      teamMillas: 'team millas', thisWeek: 'this week', ends: 'ends',
+      people: '{n} people', noPeople: 'No people found on the DASH tab.',
+      goalWord: 'GOAL', onPace: 'On pace', ahead: '{n} ahead of pace', behind: '{n} behind pace',
+      laneTitle: '{name}: {t} of {g} millas',
+      keyEarned: 'Millas earned', keyPace: 'Where they should be after week {w}', keyGoal: 'Goal: 1,000 = 4 hrs of PTO',
+      confirmLeave: 'You have unsaved scores. Leave without saving?',
+      confirmWeek: 'You have unsaved scores. Change week without saving?',
+      curWeek: 'Current week', pastWeek: 'Past week', nextWeek: 'Next week', starts: ', starts {d}',
+      millas: '{n} millas', when: 'When: ', yes: 'Yes', no: 'No', manual: 'Manual', millasFor: 'Millas for {task}',
+      noTasks: 'No tasks assigned to {m} on the DASH tab.',
+      noChanges: 'No changes', unsavedOne: '{n} unsaved score', unsavedMany: '{n} unsaved scores',
+      save: 'Save', saving: 'Saving…', savedOne: 'Saved {n} score to DASH', savedMany: 'Saved {n} scores to DASH',
+      notSaved: 'Not saved: '
+    }
+  };
+  var LANG = 'es';
+  try { var savedLang = localStorage.getItem('ctgLang'); if (savedLang === 'en' || savedLang === 'es') LANG = savedLang; } catch (e) {}
+
+  function t(key, v) {
+    var s = (I18N[LANG] && I18N[LANG][key]) || I18N.es[key] || key;
+    if (v) for (var k in v) s = s.split('{' + k + '}').join(v[k]);
+    return s;
+  }
+
+  function applyStatic() {
+    document.documentElement.lang = LANG;
+    var els = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < els.length; i++) els[i].textContent = t(els[i].getAttribute('data-i18n'));
+    document.getElementById('langEs').classList.toggle('on', LANG === 'es');
+    document.getElementById('langEn').classList.toggle('on', LANG === 'en');
+    document.getElementById('langEs').setAttribute('aria-pressed', LANG === 'es');
+    document.getElementById('langEn').setAttribute('aria-pressed', LANG === 'en');
+    if (S.review) setBrand(S.manager, t('scoring')); else setBrand('CTG Dash App', t('brandSub'));
+    updateSaveBar();
+  }
+
+  function setLang(l) {
+    if (l === LANG) return;
+    LANG = l;
+    try { localStorage.setItem('ctgLang', l); } catch (e) {}
+    applyStatic();
+    renderManagers();
+    if (S.overview) renderOverview(S.overview);
+    if (S.perf) renderPerformance(S.perf);
+    if (S.review) { renderChips(); load(true); }
+  }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+  function fmt(n) { return Math.round(Number(n) || 0).toLocaleString('en-US'); }
+  function toast(m, ms) { var tt = document.createElement('div'); tt.className = 'toast'; tt.textContent = m; document.body.appendChild(tt); setTimeout(function () { tt.remove(); }, ms || 2600); }
+  document.addEventListener('click', function (e) {
+    var td = e.target.closest ? e.target.closest('td[data-note]') : null;
+    if (td) toast(td.getAttribute('data-note'), 6000);
+  });
+  function errMsg(e) { return e && e.message ? e.message : String(e); }
+
+  // Text for the yellow-dot cells (the server sends only the reason: 'few' hours or a 'high' result)
+  function noteText(v) {
+    if (!v || !v.note) return '';
+    return v.note.k === 'few' ? t('noteFew', { h: v.hrs }) : t('noteHigh', { p: v.pct });
+  }
+
+  // ---------- Startup ----------
+  function renderManagers() {
+    if (!S.init) return;
+    document.getElementById('managers').innerHTML = S.init.managers.map(function (m) {
+      return '<button class="who" onclick="openManager(\'' + esc(m) + '\')">' +
+        '<div class="avatar">' + esc(m.charAt(0)) + '</div><b>' + esc(m) + '</b><span>' + esc(t('rateTasks')) + '</span></button>';
+    }).join('');
+  }
+
+  google.script.run.withSuccessHandler(function (d) {
+    S.init = d;
+    S.week = d.currentWeek;
+    renderManagers();
+  }).withFailureHandler(function (e) {
+    document.getElementById('managers').innerHTML = '<div class="err" style="grid-column:1/-1">' + esc(t('errNames') + errMsg(e)) + '</div>';
+  }).getInit();
+
+  applyStatic();
+  loadOverview();
+
+  // ---------- Home overview ----------
+  function loadOverview() {
+    google.script.run.withSuccessHandler(function (d) {
+      S.overview = d;
+      renderOverview(d);
+    }).withFailureHandler(function (e) {
+      var msg = '<div class="err">' + esc(t('errSummary') + errMsg(e)) + '</div>';
+      document.getElementById('season').innerHTML = msg;
+      document.getElementById('board').innerHTML = '';
+    }).getOverview();
+  }
+
+  // ---------- Home tabs: race / performance ----------
+  var perfLoaded = false;
+  function showTab(tab) {
+    var perf = tab === 'perf';
+    document.getElementById('tabRace').classList.toggle('on', !perf);
+    document.getElementById('tabPerf').classList.toggle('on', perf);
+    document.getElementById('raceView').classList.toggle('hidden', perf);
+    document.getElementById('perfView').classList.toggle('hidden', !perf);
+    if (perf && !perfLoaded) loadPerformance();
+  }
+
+  function loadPerformance() {
+    var el = document.getElementById('perfView');
+    el.innerHTML = '<div class="skel"></div><div class="skel"></div>';
+    google.script.run.withSuccessHandler(function (d) {
+      perfLoaded = true;
+      S.perf = d;
+      renderPerformance(d);
+    }).withFailureHandler(function (e) {
+      el.innerHTML = '<div class="err">' + esc(t('errPerf') + errMsg(e)) + '</div>';
+    }).getPerformance();
+  }
+
+  function heatTable(weeks, rows, cellFn) {
+    var h = '<div class="heat"><table><tr><th></th>' + weeks.map(function (w) { return '<th>' + esc(t('wk', { n: w.n })) + '<br><span>' + esc(w.label) + '</span></th>'; }).join('') + '</tr>';
+    rows.forEach(function (r) {
+      h += '<tr><td class="nm">' + esc(r.name) + '</td>' + r.vals.map(cellFn).join('') + '</tr>';
+    });
+    return h + '</table></div>';
+  }
+
+  function renderPerformance(d) {
+    function metaLine(list, unit) {
+      if (!list || !list.length) return '';
+      return '<div class="metas"><i>' + esc(t('goalPerHour', { u: unit })) + '</i>' + list.map(function (m) {
+        return '<span class="chip2">' + esc(m.name) + '<b>' + fmt(m.goal) + '</b></span>';
+      }).join('') + '</div>';
+    }
+    var orderHtml = d.order.length ? heatTable(d.weeks, d.order, function (v) {
+      if (v === null) return '<td class="none">–</td>';
+      return '<td class="' + (v <= d.goal ? 'ok' : 'miss') + '">' + v.toFixed(1) + '</td>';
+    }) : '<div class="empty">' + esc(t('noOrders')) + '</div>';
+
+    var plantHtml = d.planting.length ? heatTable(d.weeks, d.planting, function (v) {
+      if (v === null) return '<td class="none">–</td>';
+      var nt = noteText(v);
+      return '<td class="' + (v.pct >= 100 ? 'ok' : 'miss') + (nt ? ' flag' : '') + '" title="' + esc(nt || t('hoursWorked', { h: v.hrs })) + '"' + (nt ? ' data-note="' + esc(nt) + '"' : '') + '>' + v.pct + '%</td>';
+    }) : '<div class="empty">' + esc(t('noPlanting')) + '</div>';
+
+    var plugHtml = (d.plugs && d.plugs.length) ? heatTable(d.weeks, d.plugs, function (v) {
+      if (v === null) return '<td class="none">–</td>';
+      var nt = noteText(v);
+      return '<td class="' + (v.pct >= 100 ? 'ok' : 'miss') + (nt ? ' flag' : '') + '" title="' + esc(nt || t('hoursWorked', { h: v.hrs })) + '"' + (nt ? ' data-note="' + esc(nt) + '"' : '') + '>' + v.pct + '%</td>';
+    }) : '<div class="empty">' + esc(t('noPlugs')) + '</div>';
+
+    var labelHtml = (d.labels && d.labels.length) ? heatTable(d.weeks, d.labels, function (v) {
+      if (v === null) return '<td class="none">–</td>';
+      var nt = noteText(v);
+      return '<td class="' + (v.pct >= 100 ? 'ok' : 'miss') + (nt ? ' flag' : '') + '" title="' + esc(nt || t('hoursWorked', { h: v.hrs })) + '"' + (nt ? ' data-note="' + esc(nt) + '"' : '') + '>' + v.pct + '%</td>';
+    }) : '<div class="empty">' + esc(t('noLabels')) + '</div>';
+
+    var keyPct = '<div class="perf-key"><span><i style="background:#cfe5c3"></i>' + esc(t('keyFull')) + '</span><span><i style="background:#f3d4cc"></i>' + esc(t('keyUnder')) + '</span></div></div>';
+
+    document.getElementById('perfView').innerHTML =
+      '<div class="perf-card"><h3>' + esc(t('cardOrders')) + '</h3>' +
+        '<p>' + esc(t('ordersDesc', { g: d.goal })) + '</p>' +
+        orderHtml +
+        '<div class="perf-key"><span><i style="background:#cfe5c3"></i>' + esc(t('keyGoalMet', { g: d.goal })) + '</span><span><i style="background:#f3d4cc"></i>' + esc(t('keyAbove')) + '</span></div></div>' +
+      '<div class="perf-card"><h3>' + esc(t('cardPlanting')) + '</h3>' +
+        '<p>' + esc(t('pctDesc')) + '</p>' +
+        metaLine(d.goals && d.goals.planting, t('unitPlants')) +
+        plantHtml + keyPct +
+      '<div class="perf-card"><h3>' + esc(t('cardPlugs')) + '</h3>' +
+        '<p>' + esc(t('pctDesc')) + '</p>' +
+        metaLine(d.goals && d.goals.plugs, t('unitPlugs')) +
+        plugHtml + keyPct +
+      '<div class="perf-card"><h3>' + esc(t('cardLabels')) + '</h3>' +
+        '<p>' + esc(t('pctDesc')) + '</p>' +
+        metaLine(d.goals && d.goals.labels, t('unitLabels')) +
+        labelHtml + keyPct;
+  }
+
+  function renderOverview(d) {
+    var wk = Math.min(10, Math.max(0, Number(d.currentWeek) || 0));
+
+    // Season strip
+    var segs = '', lbls = '';
+    for (var i = 1; i <= 10; i++) {
+      segs += '<div class="seg' + (i < wk ? ' done' : '') + (i === wk ? ' now' : '') + '"></div>';
+      lbls += '<div class="' + (i === wk ? 'now' : '') + '">' + i + '</div>';
+    }
+    var people = d.people.slice().sort(function (a, b) { return b.total - a.total || a.name.localeCompare(b.name); });
+    var team = people.reduce(function (s, p) { return s + p.total; }, 0);
+    var teamWk = people.reduce(function (s, p) { return s + p.week; }, 0);
+
+    document.getElementById('season').innerHTML =
+      '<div class="season">' +
+        '<div class="season-top">' +
+          '<div class="season-wk num">' + esc(wk ? t('season', { w: wk }) : t('notStarted')) + (wk ? '<small>' + esc(t('of10')) + '</small>' : '') + '</div>' +
+          '<div class="season-dates"><b>' + esc(d.weekStart) + (d.weekEnd ? ' – ' + esc(d.weekEnd) : '') + '</b>' +
+            (d.daysLeft !== '' ? esc(d.daysLeft) + ' ' + esc(t('daysLeft')) : '') + '</div>' +
+        '</div>' +
+        '<div class="strip" aria-hidden="true">' + segs + '</div>' +
+        '<div class="strip-lbl" aria-hidden="true">' + lbls + '</div>' +
+        '<div class="season-foot">' +
+          '<div><b class="num">' + fmt(team) + '</b>' + esc(t('teamMillas')) + '</div>' +
+          '<div style="text-align:center"><b class="num">+' + fmt(teamWk) + '</b>' + esc(t('thisWeek')) + '</div>' +
+          '<div style="text-align:right"><b class="num">' + esc(d.programEnd || '—') + '</b>' + esc(t('ends')) + '</div>' +
+        '</div>' +
+      '</div>';
+
+    // Standings
+    document.getElementById('teamLine').textContent = people.length ? t('people', { n: people.length }) : '';
+    if (!people.length) { document.getElementById('board').innerHTML = '<div class="empty">' + esc(t('noPeople')) + '</div>'; return; }
+
+    var scale = people.reduce(function (m, p) { return Math.max(m, p.goal || 1000, p.total); }, 0) || 1000;
+    var goalMax = people.reduce(function (m, p) { return Math.max(m, p.goal || 1000); }, 0) || 1000;
+    var runnerSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<circle cx="16" cy="3.8" r="2.4" fill="currentColor" stroke="none"/>' +
+      '<path d="M14 8.5 L11 14"/><path d="M13.5 9.5 L17.5 12 L20.5 10"/><path d="M13.5 9.5 L9.5 9 L7 11.5"/>' +
+      '<path d="M11 14 L15.5 16.5 L14 21"/><path d="M11 14 L9 19 L5.5 21"/></svg>';
+
+    function pct(v) { return Math.min(100, v / scale * 100); }
+    var ticks = [0, 250, 500, 750].filter(function (v) { return v < goalMax - 100; });
+    var axis = '<div class="raxis">' + ticks.map(function (v) {
+      return '<span style="left:' + pct(v).toFixed(1) + '%">' + v + '</span>';
+    }).join('') + '<span class="goal" style="left:' + pct(goalMax).toFixed(1) + '%">' + esc(t('goalWord')) + ' ' + fmt(goalMax) + '</span></div>';
+    var grid = ticks.slice(1).map(function (v) { return '<div class="rgrid" style="left:' + pct(v).toFixed(1) + '%"></div>'; }).join('');
+
+    var lanes = people.map(function (p, idx) {
+      var goal = p.goal || 1000;
+      var paceVal = wk ? goal * wk / 10 : 0;
+      var diff = (p.total - (Number(p.bonus) || 0)) - paceVal; // bonus is a real extra, not counted toward the pace
+      var status = !wk ? '' : (diff >= 0
+        ? '<span class="ahead">' + esc(diff === 0 ? t('onPace') : t('ahead', { n: fmt(diff) })) + '</span>'
+        : '<span class="behind">' + esc(t('behind', { n: fmt(-diff) })) + '</span>');
+      var lead = idx === 0 && p.total > 0;
+      return '<div class="lane' + (lead ? ' lead' : '') + '" title="' + esc(t('laneTitle', { name: p.name, t: fmt(p.total), g: fmt(goal) })) + '">' +
+        '<div class="lhead">' +
+          '<span class="pos num">' + (idx + 1) + '</span>' +
+          '<span class="lname">' + esc(p.name) + (lead ? '<span class="crown">👑</span>' : '') + '</span>' +
+          '<span class="lscore num">' + fmt(p.total) + '<small>/ ' + fmt(goal) + '</small></span>' +
+        '</div>' +
+        '<div class="rtrack">' + grid +
+          '<div class="rbar"></div>' +
+          '<div class="rfill" data-x="' + pct(p.total).toFixed(1) + '"></div>' +
+          (wk ? '<div class="rpace" style="left:' + pct(paceVal).toFixed(1) + '%"></div>' : '') +
+          '<div class="rflag" style="left:' + pct(goal).toFixed(1) + '%"></div>' +
+          '<div class="runner' + (p.total > 0 ? ' go' : '') + '" data-x="' + pct(p.total).toFixed(1) + '">' + runnerSvg + '</div>' +
+        '</div>' +
+        '<div class="lmeta"><span>+' + fmt(p.week) + ' ' + esc(t('thisWeek')) + '</span>' + status + '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('board').innerHTML =
+      '<div class="board">' + axis + lanes + '</div>' +
+      '<div class="key"><span><i class="k-fill"></i>' + esc(t('keyEarned')) + '</span>' +
+        (wk ? '<span><i class="k-pace"></i>' + esc(t('keyPace', { w: wk })) + '</span>' : '') +
+        '<span><i class="k-fin"></i>' + esc(t('keyGoal')) + '</span></div>';
+
+    // Send the runners off from the start line
+    setTimeout(function () {
+      var els = document.querySelectorAll('#board .runner, #board .rfill');
+      for (var i = 0; i < els.length; i++) {
+        var el = els[i];
+        if (el.classList.contains('rfill')) el.style.width = el.getAttribute('data-x') + '%';
+        else el.style.left = el.getAttribute('data-x') + '%';
+      }
+      setTimeout(function () {
+        var go = document.querySelectorAll('#board .runner.go');
+        for (var j = 0; j < go.length; j++) go[j].classList.remove('go');
+      }, 1700);
+    }, 60);
+  }
+
+  // ---------- Navigation ----------
+  function show(review) {
+    S.review = review;
+    document.getElementById('home').classList.toggle('hidden', review);
+    document.getElementById('review').classList.toggle('hidden', !review);
+    document.getElementById('saveBar').classList.toggle('hidden', !review);
+    document.getElementById('backBtn').classList.toggle('hidden', !review);
+    window.scrollTo(0, 0);
+  }
+
+  function changes() { return Object.keys(S.dirty).length; }
+
+  function goHome() {
+    if (changes() && !confirm(t('confirmLeave'))) return;
+    S.dirty = {};
+    show(false);
+    setBrand('CTG Dash App', t('brandSub'));
+    perfLoaded = false;
+    if (!document.getElementById('perfView').classList.contains('hidden')) loadPerformance();
+    loadOverview();
+  }
+
+  function setBrand(title, sub) {
+    document.getElementById('brand').innerHTML = esc(title) + '<small>' + esc(sub) + '</small>';
+  }
+
+  function openManager(m) {
+    S.manager = m;
+    show(true);
+    setBrand(m, t('scoring'));
+    renderChips();
+    load();
+  }
+
+  function renderChips() {
+    var cur = S.init ? S.init.currentWeek : 1;
+    var html = '';
+    for (var w = 1; w <= 10; w++) {
+      html += '<button class="chip' + (w === S.week ? ' on' : '') + (w === cur ? ' cur' : '') + '" onclick="pickWeek(' + w + ')">' + esc(t('wk', { n: w })) + '</button>';
+    }
+    document.getElementById('weekChips').innerHTML = html;
+    var wd = S.init && S.init.weeks[S.week - 1] ? S.init.weeks[S.week - 1].date : '';
+    document.getElementById('weekNote').textContent =
+      (S.week === cur ? t('curWeek') : (S.week < cur ? t('pastWeek') : t('nextWeek'))) + (wd ? t('starts', { d: wd }) : '');
+  }
+
+  function pickWeek(w) {
+    if (w === S.week) return;
+    if (changes() && !confirm(t('confirmWeek'))) return;
+    S.week = w;
+    renderChips();
+    load();
+  }
+
+  // ---------- Review ----------
+  // keep = true (language switch): reload the task text but keep scores the manager has typed and not saved yet
+  function load(keep) {
+    if (!keep) { S.vals = {}; S.dirty = {}; document.getElementById('list').innerHTML = '<div class="skel"></div><div class="skel"></div>'; }
+    updateSaveBar();
+    google.script.run.withSuccessHandler(function (groups) {
+      S.groups = groups;
+      groups.forEach(function (g) {
+        g.tasks.forEach(function (tk) {
+          if (keep && S.dirty[tk.row]) return;
+          S.vals[tk.row] = tk.value === '' ? '' : String(tk.value);
+        });
+      });
+      render();
+    }).withFailureHandler(function (e) {
+      document.getElementById('list').innerHTML = '<div class="err">' + esc(t('errTasks') + errMsg(e)) + '</div>';
+    }).getTasks(S.manager, S.week, LANG);
+  }
+
+  function maxOf(tk) { var n = Number(tk.miles); return tk.miles === '' || isNaN(n) ? null : n; }
+
+  function groupSum(g) {
+    return (Number(g.otherSum) || 0) + g.tasks.reduce(function (s, tk) { return s + (Number(S.vals[tk.row]) || 0); }, 0);
+  }
+
+  function taskHtml(tk) {
+    var v = S.vals[tk.row];
+    var max = maxOf(tk);
+    var isYes = v !== '' && max !== null && Number(v) === max;
+    var isNo = v !== '' && Number(v) === 0;
+    var html = '<div class="task"><div class="t-top"><div class="t-name">' + esc(tk.task) + '</div>' +
+      (max !== null ? '<div class="t-pts">' + esc(t('millas', { n: fmt(max) })) + '</div>' : '') + '</div>';
+    if (tk.how) html += '<div class="t-how">' + esc(tk.how) + '</div>';
+    if (tk.when) html += '<div class="t-when">' + esc(t('when')) + esc(tk.when) + '</div>';
+    html += '<div class="ctrl" id="c' + tk.row + '">';
+    if (max !== null && !tk.isBonus) {
+      html += '<div class="seg2"><button class="' + (isYes ? 'yes' : '') + '" onclick="setVal(' + tk.row + ',' + max + ')">' + esc(t('yes')) + '</button>' +
+        '<button class="' + (isNo ? 'no' : '') + '" onclick="setVal(' + tk.row + ',0)">' + esc(t('no')) + '</button></div>';
+    }
+    html += '<input class="manual' + (v !== '' ? ' set' : '') + '" type="number" inputmode="decimal" min="0" placeholder="' + esc(t('manual')) + '" value="' + esc(v) + '" oninput="typeVal(' + tk.row + ', this)" aria-label="' + esc(t('millasFor', { task: tk.task })) + '">';
+    html += '</div>';
+    return html + '</div>';
+  }
+
+  function render() {
+    var el = document.getElementById('list');
+    if (!S.groups.length) { el.innerHTML = '<div class="empty">' + esc(t('noTasks', { m: S.manager })) + '</div>'; return; }
+    el.innerHTML = S.groups.map(function (g, gi) {
+      return '<div class="emp"><div class="emp-h"><b>' + esc(g.name) + '</b>' +
+        '<span class="num" id="sum' + gi + '">' + fmt(groupSum(g)) + '<small>' + esc(t('thisWeek')) + '</small></span></div>' +
+        g.tasks.map(taskHtml).join('') + '</div>';
+    }).join('');
+  }
+
+  function updateSums() {
+    S.groups.forEach(function (g, gi) {
+      var el = document.getElementById('sum' + gi);
+      if (el) el.innerHTML = fmt(groupSum(g)) + '<small>' + esc(t('thisWeek')) + '</small>';
+    });
+  }
+
+  function updateSaveBar() {
+    var n = changes();
+    document.getElementById('changeCount').textContent = n ? t(n === 1 ? 'unsavedOne' : 'unsavedMany', { n: n }) : t('noChanges');
+    document.getElementById('saveBtn').disabled = !n;
+  }
+
+  function setVal(row, n) {
+    S.vals[row] = String(S.vals[row]) === String(n) ? '' : String(n);
+    S.dirty[row] = true;
+    render();
+    updateSaveBar();
+  }
+
+  function typeVal(row, input) {
+    var v = input.value;
+    S.vals[row] = v;
+    S.dirty[row] = true;
+    input.classList.toggle('set', v !== '');
+    var btns = document.querySelectorAll('#c' + row + ' .seg2 button');
+    if (btns.length === 2) {
+      var g = null;
+      S.groups.forEach(function (gr) { gr.tasks.forEach(function (tk) { if (tk.row === row) g = tk; }); });
+      var max = g ? maxOf(g) : null;
+      btns[0].classList.toggle('yes', v !== '' && max !== null && Number(v) === max);
+      btns[1].classList.toggle('no', v !== '' && Number(v) === 0);
+    }
+    updateSums();
+    updateSaveBar();
+  }
+
+  function save() {
+    var entries = Object.keys(S.dirty).map(function (r) { return { row: Number(r), value: S.vals[r] }; });
+    if (!entries.length) return;
+    var b = document.getElementById('saveBtn');
+    b.disabled = true; b.textContent = t('saving');
+    google.script.run.withSuccessHandler(function (res) {
+      b.textContent = t('save');
+      toast(t(res.saved === 1 ? 'savedOne' : 'savedMany', { n: res.saved }));
+      load();
+    }).withFailureHandler(function (e) {
+      b.textContent = t('save'); b.disabled = false;
+      toast(t('notSaved') + errMsg(e));
+    }).saveScores(S.manager, S.week, entries);
+  }
+</script>
+</body>
+</html>
