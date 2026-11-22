@@ -5,13 +5,25 @@ var SPREADSHEET_ID = '1ZCSHtPryT8Y13g7PL3pa-k62X2OC5j13YkYMh0R5maA';
 var SHEET_NAME = 'DASH';
 var MANAGERS = ['Dago', 'Jessica', 'Andrej'];
 
+var NEW_APP_URL = 'https://cascadetropicals.github.io/ctg-dash-app/';
+
+// The app now lives on GitHub Pages. This old address only forwards there and keeps the reminder-mail link parameters (?manager=Name&lang=es).
 function doGet(e) {
-  // Link from the reminder mail: ?manager=Dago&lang=es opens that manager's scoring screen straight away
   var p = (e && e.parameter) || {};
-  var deep = {};
-  MANAGERS.forEach(function (m) { if (String(p.manager || '').toLowerCase() === m.toLowerCase()) deep.manager = m; });
-  if (p.lang === 'en' || p.lang === 'es') deep.lang = p.lang;
-  var html = HtmlService.createHtmlOutputFromFile('Index').getContent().split("'__DEEP__'").join(JSON.stringify(deep)); // Apps Script strips comments, so the placeholder is a real value
+  // Design preview (test only): ?preview=1 shows the app page straight from Index.html
+  if (p.preview === '1') return HtmlService.createHtmlOutputFromFile('Index').setTitle('CTG App').addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  var q = [];
+  if (p.manager) q.push('manager=' + encodeURIComponent(p.manager));
+  if (p.lang) q.push('lang=' + encodeURIComponent(p.lang));
+  var url = NEW_APP_URL + (q.length ? '?' + q.join('&') : '');
+  var html = '<!DOCTYPE html><html><head><base target="_top"><meta charset="utf-8"><title>CTG App</title>' +
+    '<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f3f6f1;font-family:Arial,sans-serif;color:#17241b;text-align:center}' +
+    '.c{background:#fff;border-radius:18px;padding:28px 24px;max-width:380px;box-shadow:0 8px 30px rgba(0,0,0,.12)}' +
+    'a{display:inline-block;margin-top:16px;padding:12px 22px;border-radius:12px;background:#2f6b3a;color:#fff;font-weight:700;text-decoration:none}</style></head><body><div class="c">' +
+    '<div style="font-size:22px;font-weight:800">CTG App</div>' +
+    '<p>La app se mud\u00f3 a una nueva direcci\u00f3n.<br>The app has moved to a new address.</p>' +
+    '<a href="' + url.replace(/&/g, '&amp;') + '" target="_top">Abrir / Open</a></div>' +
+    '<script>try { window.top.location.replace(' + JSON.stringify(url) + '); } catch (err) {}<\/script></body></html>';
   return HtmlService.createHtmlOutput(html)
     .setTitle('CTG App')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
