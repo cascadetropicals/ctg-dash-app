@@ -558,9 +558,30 @@ function getAccuracy() {
 // order pulling comes from CG BLANCA (tab 'performance': per day and picker, first and last pick), so pulling is one block per person and day. Last 14 days. Cached 60 seconds.
 var PULL_SS_ID = '1PxfE7QZfGWrJXTupcwfLZJ3bQ06VKzMPw6SsPQnkJ0o';
 var AVAIL_SS_ID = '1_q9SAZVD_GMBw1TVWCcXXcec5iIPKnV2GIclzUwunmI'; // CG availability sheet, tab AVAIL CG: column BA = last edited in app (time), BB = last edited by
+// Cache for big results (a cache entry holds at most 100 KB): the JSON is gzipped, turned into text and split in 90 KB pieces.
+function tlCachePut(key, obj, sec) {
+  try {
+    var b64 = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(JSON.stringify(obj), 'application/octet-stream', 'x')).getBytes());
+    var n = Math.ceil(b64.length / 90000), all = {};
+    for (var i = 0; i < n; i++) all[key + '_' + i] = b64.substr(i * 90000, 90000);
+    all[key] = String(n);
+    CacheService.getScriptCache().putAll(all, sec);
+  } catch (e) {}
+}
+function tlCacheGet(key) {
+  try {
+    var c = CacheService.getScriptCache(), n = Number(c.get(key));
+    if (!n) return null;
+    var keys = [], i;
+    for (i = 0; i < n; i++) keys.push(key + '_' + i);
+    var got = c.getAll(keys), s = '';
+    for (i = 0; i < n; i++) { if (!got[key + '_' + i]) return null; s += got[key + '_' + i]; }
+    return JSON.parse(Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(s), 'application/x-gzip', 'x')).getDataAsString());
+  } catch (e) { return null; }
+}
 function getTimeline() {
   var cache = CacheService.getScriptCache();
-  try { var hit = cache.get('tl4'); if (hit) return JSON.parse(hit); } catch (e1) {}
+  var hitTl = tlCacheGet('tl5'); if (hitTl) return hitTl;
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), tz = ss.getSpreadsheetTimeZone();
   var todayKey = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'), q = todayKey.split('-');
   var cutKey = Utilities.formatDate(new Date(Date.UTC(Number(q[0]), Number(q[1]) - 1, Number(q[2]) - 14)), 'UTC', 'yyyy-MM-dd');
@@ -571,11 +592,19 @@ function getTimeline() {
     var h = Number(m[1]) % 12; if (/pm/i.test(m[3] || '')) h += 12; else if (!m[3]) h = Number(m[1]);
     return h * 60 + Number(m[2]);
   }
-  var rows = [];
-  var en = ss.getSheetByName('IMPORT planting entries');
-  if (en && en.getLastRow() >= 5) rows = en.getRange(5, 1, en.getLastRow() - 4, 17).getDisplayValues();
-  var enLb = ss.getSheetByName('IMPORT label entries');
-  if (enLb && enLb.getLastRow() >= 5) rows = rows.concat(enLb.getRange(5, 1, enLb.getLastRow() - 4, 17).getDisplayValues());
+  // read only from the first row of the last 14 days down (the tabs hold 6 weeks and more), not the whole tab
+  function recentRows(sh) {
+    var last = sh ? sh.getLastRow() : 0;
+    if (last < 5) return [];
+    var col = sh.getRange(5, 2, last - 4, 1).getDisplayValues(), first = -1;
+    for (var i = 0; i < col.length; i++) {
+      var dm = String(col[i][0]).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (dm && (dm[3] + '-' + ('0' + dm[1]).slice(-2) + '-' + ('0' + dm[2]).slice(-2)) >= cutKey) { first = i; break; }
+    }
+    if (first < 0) return [];
+    return sh.getRange(5 + first, 1, last - 4 - first, 17).getDisplayValues();
+  }
+  var rows = recentRows(ss.getSheetByName('IMPORT planting entries')).concat(recentRows(ss.getSheetByName('IMPORT label entries')));
   var recs = [];
   rows.forEach(function (r) {
     var m = String(r[1]).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -590,8 +619,9 @@ function getTimeline() {
     // [source, day, person, minute of day, qty planted, status, minutes of credited work before this record, 1 = start marker, plant, qty entered, size, hours credited, hours at goal speed, minute of the previous record (-1 if none that day), goal per hour]
     recs.push([src, dk, String(r[3]).trim(), tm, num(r[14]), String(r[13]).trim(), (!mk && String(r[13]).trim() === 'OK') ? gap : 0, mk ? 1 : 0, String(r[5]).trim(), String(r[4]).trim() === '' ? '' : num(r[4]), String(r[6]).trim(), Math.round(num(r[15]) * 100) / 100, Math.round(num(r[16]) * 100) / 100, (String(r[9]).trim().split(' ')[0] === String(r[1]).trim()) ? mins(String(r[9]).trim().split(' ').slice(1).join(' ')) : -1, num(r[12])]);
   });
-  var pulls = [], pullErr = '';
-  try {
+  var pa = tlCacheGet('tl5pa'), paHit = !!pa; // order pulling and CG Avail change slowly: cached 10 minutes
+  var pulls = paHit ? pa.pulls : [], pullErr = paHit ? pa.pullErr : '';
+  if (!paHit) try {
     var ps = SpreadsheetApp.openById(PULL_SS_ID).getSheetByName('performance');
     var lc = ps.getLastColumn(), v = ps.getRange(11, 1, 40, lc).getDisplayValues();
     v.forEach(function (r) {
@@ -608,8 +638,8 @@ function getTimeline() {
     });
   } catch (e3) { pullErr = String(e3.message || e3); }
   // CG Avail: Jessica's edits, one block per day from her first to her last edit (the sheet keeps only the latest edit time per row)
-  var avail = [], availErr = '';
-  try {
+  var avail = paHit ? pa.avail : [], availErr = paHit ? pa.availErr : '';
+  if (!paHit) try {
     var av = SpreadsheetApp.openById(AVAIL_SS_ID).getSheetByName('AVAIL CG');
     var vv = av.getRange(4, 53, Math.max(1, av.getLastRow() - 3), 2).getDisplayValues();
     var byDay = {};
@@ -624,7 +654,8 @@ function getTimeline() {
     Object.keys(byDay).forEach(function (k) { avail.push([k, 'Jessica', byDay[k].a, byDay[k].b, byDay[k].n]); }); // day, person, first edit, last edit, rows edited
   } catch (e4) { availErr = String(e4.message || e4); }
   var out = { today: todayKey, recs: recs, pulls: pulls, pullErr: pullErr, avail: avail, availErr: availErr, readAt: { ms: Date.now(), txt: Utilities.formatDate(new Date(), tz, 'M/d h:mm a z') } };
-  try { cache.put('tl4', JSON.stringify(out), 60); } catch (e2) {}
+  if (!paHit && !pullErr && !availErr) tlCachePut('tl5pa', { pulls: pulls, pullErr: pullErr, avail: avail, availErr: availErr }, 600);
+  tlCachePut('tl5', out, 120);
   return out;
 }
 
