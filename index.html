@@ -565,6 +565,31 @@
   .tl-pull { color: var(--leaf-ink); }
   .ww-bar { background: var(--line); }
   .ww-rem { background: var(--track); }
+  /* ---- v70 navigation: text tabs (side menu on computer, top strip on phone), segmented sub tabs ---- */
+  :root { --rail-w: 204px; }
+  .tab { flex-direction: row; justify-content: flex-start; gap: 0; font-family: var(--body); font-size: 16px; font-weight: 600; color: var(--ink-2); border-radius: 10px; }
+  .tab .ti { display: none; }
+  .tab .tl { font-weight: 600; overflow: visible; }
+  .tabs .tab.on { background: var(--ink); color: var(--paper); }
+  .tabs .tab.on .tl { font-weight: 700; }
+  .subtabs { display: flex; width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; gap: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); margin: 0 0 14px; }
+  .subtabs::-webkit-scrollbar { display: none; }
+  .subtab { flex: 0 0 auto; border: 0; border-radius: 0; background: transparent; padding: 12px 18px; font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .subtab.on { background: var(--leaf); color: var(--leaf-ink); border: 0; }
+  .pmsw { gap: 0; padding: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface-2); }
+  .pmsw button { border-radius: 0; padding: 12px 8px; color: var(--ink); }
+  .pmsw button.on { background: var(--leaf); color: var(--leaf-ink); box-shadow: none; }
+  @media (min-width: 768px) {
+    .tabs { padding: 16px 12px; gap: 6px; background: var(--card); }
+    .tab { min-height: 48px; padding: 10px 16px; font-size: 16px; }
+  }
+  @media (max-width: 767px) {
+    main { padding-bottom: 40px; }
+    .tabs { position: sticky; top: 56px; left: auto; right: auto; bottom: auto; z-index: 25; display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 4px; margin: 0 0 14px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { flex: 0 0 auto; min-height: 44px; padding: 8px 16px; font-size: 16px; }
+    .toast { bottom: calc(24px + env(safe-area-inset-bottom)); }
+  }
 </style>
 </head>
 <body>
