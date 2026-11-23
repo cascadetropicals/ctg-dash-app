@@ -637,6 +637,46 @@
   @keyframes plantGrow { 0% { transform: scale(.15); opacity: .4; } 70% { transform: scale(1); opacity: 1; } 100% { transform: scale(1) rotate(2deg); opacity: 1; } }
   @keyframes plantTxt { from { opacity: .45; } to { opacity: 1; } }
   @media (prefers-reduced-motion: reduce) { .skel::before, .skel::after { animation: none; } }
+  /* v74 phone polish */
+  .ln-fgrid, .ln-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 900px) { .ln-fgrid, .ln-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .ln-fw, .ln-tw { min-width: 0; }
+  .ln-feat, .ln-tc { min-width: 0; max-width: 100%; box-sizing: border-box; }
+  .ln-feat b, .ln-tc b { overflow-wrap: anywhere; }
+  .ln-feat .ln-dst { max-width: 100%; box-sizing: border-box; }
+  .ln-feat .ln-dst small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  @media (max-width: 640px) {
+    .tabs { padding: 4px; gap: 2px; }
+    .tabs .tab { flex: 1 1 auto; min-width: 0; justify-content: center; padding: 10px 6px; font-size: 14px; white-space: nowrap; }
+    .subtabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); width: 100%; box-sizing: border-box; gap: 1px; background: var(--line); overflow: hidden; }
+    .subtab { padding: 11px 8px; font-size: 14px; white-space: normal; text-align: center; line-height: 1.2; background: var(--surface-2); }
+    .subtab.on { background: var(--leaf); }
+    .ln-fgrid, .ln-grid { gap: 10px; }
+    .ln-feat { min-height: 120px; padding: 12px 12px 38px; }
+    .ln-feat b, .ln-tc b { font-size: 16px; }
+    .ln-feat .ln-go { right: 12px; bottom: 10px; }
+    .ln-tc { min-height: 84px; padding: 12px; }
+    .perf-card { padding: 14px 10px 6px; }
+    .perf-card h3 { font-size: 19px; margin: 0 4px 6px; padding: 0; }
+    .perf-card .td-cards, .perf-card .det-how { margin-left: 4px; margin-right: 4px; }
+    .perf-card h4 { margin: 12px 4px 6px; }
+    .tl-leg { padding: 0 6px 12px; }
+    .tl-wrap { padding: 0 6px 10px; }
+    .tl-lab { flex: 0 0 88px; padding-right: 6px; font-size: 12.5px; position: sticky; left: 0; z-index: 3; background: var(--card); }
+    .tl-lab span { font-size: 10.5px; }
+    .perf-card p { font-size: 13px; margin: 0 4px 8px; }
+    .sm-wrap { padding: 0 0 8px; }
+    .sm-t th { font-size: 10px; letter-spacing: .02em; padding: 6px 7px; }
+    .sm-t td { padding: 8px 7px; }
+    .sm-t:not(.sm-fit) { min-width: 620px; }
+    .sm-t:not(.sm-fit) th:first-child, .sm-t:not(.sm-fit) td:first-child { position: sticky; left: 0; z-index: 1; background: var(--card); box-shadow: 1px 0 0 var(--line); }
+    .sm-t.sm-fit { min-width: 0; font-size: 12.5px; }
+    .sm-t.sm-fit th { font-size: 9.5px; letter-spacing: 0; padding: 5px 3px; white-space: normal; line-height: 1.15; vertical-align: bottom; }
+    .sm-t.sm-fit td { padding: 7px 3px; }
+    .sm-t.sm-fit td.l { white-space: normal; overflow-wrap: anywhere; }
+    .sm-pct { min-width: 36px; padding: 2px 6px; font-size: 11.5px; }
+    .sm-h { margin: 6px 12px 2px; }
+  }
 </style>
 </head>
 <body>
@@ -698,12 +738,12 @@
     <div class="pmsw hidden" id="pmSwitch" role="tablist"><button id="pmPerf" class="on" role="tab" onclick="pmSet('perf')" data-i18n="perfTab">Rendimiento</button><button id="pmMil" role="tab" onclick="pmSet('mil')" data-i18n="milTab">Millas</button></div>
     <div id="perfView" class="hidden">
       <div class="subtabs" role="tablist">
-        <button class="subtab on" id="subWeek" role="tab" onclick="showPerf('week')" data-i18n="pWeek">Semanal</button>
+        <button class="subtab on" id="subSum" role="tab" onclick="showPerf('sum')" data-i18n="pSum">Resumen diario</button>
+        <button class="subtab" id="subWk" role="tab" onclick="showPerf('wk')" data-i18n="pWk">Semana por persona</button>
+        <button class="subtab" id="subTl" role="tab" onclick="showPerf('tl')" data-i18n="pTl">Cronología</button>
+        <button class="subtab" id="subWeek" role="tab" onclick="showPerf('week')" data-i18n="pWeek">Semanal</button>
         <button class="subtab" id="subToday" role="tab" onclick="showPerf('today')" data-i18n="pToday">Hoy</button>
         <button class="subtab" id="subAcc" role="tab" onclick="showPerf('acc')" data-i18n="pAcc">Calidad de datos</button>
-        <button class="subtab" id="subTl" role="tab" onclick="showPerf('tl')" data-i18n="pTl">Cronología</button>
-        <button class="subtab" id="subSum" role="tab" onclick="showPerf('sum')" data-i18n="pSum">Resumen diario</button>
-        <button class="subtab" id="subWk" role="tab" onclick="showPerf('wk')" data-i18n="pWk">Semana por persona</button>
       </div>
       <div id="perfWeek"></div>
       <div id="perfToday" class="hidden"></div>
@@ -1099,6 +1139,7 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
 
   // ---------- Home tabs: race / performance ----------
   var perfLoaded = false, scoreLoaded = false;
+  var PERF_FIRST = false;
   var TD = { data: null, who: '', day: '', sub: 'week', busy: false, old: {}, fresh: false, at: 0 };
   function showTab(tab, noPush) {
     if (tab === 'race' || tab === 'score') { MIL_SUB = tab; tab = 'mil'; }
@@ -1124,6 +1165,7 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
     if (start && !LINKS) loadLinks();
     if (work) loadWork();
     if (ask) renderChat();
+    if (perf && !PERF_FIRST) { PERF_FIRST = true; showPerf('sum'); }
     if (perf && !perfLoaded) loadPerformance();
     if (perf && TD.sub === 'today') loadToday();
     if (mil) showMil(MIL_SUB);
@@ -1527,7 +1569,7 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
   }
   function wkTable(rows) {
     if (!rows.length) return '<div class="empty">' + esc(t('sumNone')) + '</div>';
-    var h = '<div class="sm-wrap"><table class="sm-t"><tr><th class="l">' + esc(t('sumType')) + '</th><th>' + esc(t('sumRate')) + '</th><th>' + esc(t('sumHours')) + '</th><th>' + esc(t('sumQty')) + '</th><th>' + esc(t('sumGoal')) + '</th></tr>';
+    var h = '<div class="sm-wrap"><table class="sm-t sm-fit"><tr><th class="l">' + esc(t('sumType')) + '</th><th>' + esc(t('sumRate')) + '</th><th>' + esc(t('sumHours')) + '</th><th>' + esc(t('sumQty')) + '</th><th>' + esc(t('sumGoal')) + '</th></tr>';
     rows.forEach(function (o) {
       var pct = o.goalHrs > 0 ? Math.round(o.atGoal / o.goalHrs * 100) : null;
       var rate = o.hrs > 0 ? fmt(o.qty / o.hrs) : '–';
@@ -1967,6 +2009,7 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
     if (host === 'drive.google.com') return DEST.drive;
     if (host === 'script.google.com') return DEST.app;
     if (host === 'appsheet.com' || /\.appsheet\.com$/.test(host)) return DEST.appsheet;
+    if (/.github.io$/.test(host)) return { name: 'GitHub Pages', svg: DEST_SITE };
     return { name: host || 'Link', svg: DEST_SITE };
   }
   function lnIconOf(l) {
