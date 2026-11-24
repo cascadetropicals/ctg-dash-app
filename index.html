@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script>try{var __th=localStorage.getItem('ctgTheme');if(__th==='light'||__th==='dark')document.documentElement.setAttribute('data-theme',__th);}catch(e){}</script>
 <style>
   :root {
     --paper:#EDF1EB; --card:#FFFFFF; --surface-2:#F5F8F3; --ink:#13241A; --ink-2:#3E5045; --ink-3:#5A6A5F; --muted:#5A6A5F; --line:#D3DCD1;
@@ -466,6 +467,10 @@
   .umenu b { display: block; font-size: 16px; margin: 1px 0 12px; word-break: break-word; }
   .umenu button { width: 100%; border: 1px solid var(--line); background: var(--card); border-radius: 10px; padding: 11px 12px; font: inherit; font-size: 14.5px; font-weight: 700; color: var(--leaf-dark); cursor: pointer; }
 
+  .umenu .th-lbl { margin: 12px 0 6px; }
+  .th-seg { display: flex; gap: 4px; margin-bottom: 12px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); }
+  .umenu .th-seg button { flex: 1; width: auto; border: 0; background: transparent; padding: 7px 4px; font-size: 13px; color: var(--ink-2); border-radius: 8px; }
+  .umenu .th-seg button.on { background: var(--leaf); color: var(--leaf-ink); }
   .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; margin: 0; border-radius: 0; overflow: visible; background: color-mix(in srgb, var(--card) 96%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-top: 1px solid var(--line); box-shadow: 0 -6px 22px rgba(23,36,27,.07); display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
   .tab { flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 54px; padding: 3px 2px 2px; border-radius: 12px; background: transparent; box-shadow: none; font-size: 11px; font-weight: 700; color: var(--ink-3); -webkit-tap-highlight-color: transparent; }
   .tab .ti { display: flex; align-items: center; justify-content: center; width: 58px; height: 30px; border-radius: 12px; transition: background .18s; }
@@ -676,6 +681,22 @@
     .sm-pct { min-width: 36px; padding: 2px 6px; font-size: 11.5px; }
     .sm-h { margin: 6px 12px 2px; }
   }
+  /* v76 time blocks */
+  .tb-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; align-items: end; margin-top: 10px; }
+  .tb-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-form select, .tb-form input { font: inherit; font-size: 15px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 42px; min-width: 0; }
+  .tb-add { font: inherit; font-weight: 700; font-size: 14.5px; color: var(--leaf-ink); background: var(--leaf); border: 0; border-radius: 10px; padding: 11px 14px; min-height: 42px; cursor: pointer; }
+  .tb-add[disabled] { opacity: .6; cursor: default; }
+  .tb-mgr { color: var(--ink-3); font-size: 13px; margin: 8px 0 0; }
+  .tb-day { margin: 14px 0 6px; font-weight: 700; font-size: 13px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
+  .tb-day:first-child { margin-top: 0; }
+  .tb-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+  .tb-who { flex: 1; min-width: 0; }
+  .tb-who span { color: var(--ink-2); margin-left: 8px; }
+  .tb-why { color: var(--ink-3); font-size: 13px; }
+  .tb-del { font: inherit; font-size: 13px; font-weight: 700; color: var(--ink-2); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+  .tb-del.on { color: var(--bad); border-color: var(--bad); }
+  @media (max-width: 640px) { .tb-row { flex-wrap: wrap; } .tb-why { order: 3; width: 100%; } }
 </style>
 </head>
 <body>
@@ -687,7 +708,7 @@
   <div class="lang" role="group" aria-label="Idioma / Language"><button id="langEs" onclick="setLang('es')">ES</button><button id="langEn" onclick="setLang('en')">EN</button></div>
   <button class="me-chip hidden" id="meChip" onclick="toggleUserMenu()" aria-haspopup="true"><span class="me-av" id="meAv"></span><span class="me-nm" id="meNm"></span></button>
 </div>
-<div class="umenu hidden" id="uMenu"><small data-i18n="lgAs"></small><b id="uName"></b><button onclick="signOut()" data-i18n="lgOut"></button></div></div>
+<div class="umenu hidden" id="uMenu"><small data-i18n="lgAs"></small><b id="uName"></b><small class="th-lbl" data-i18n="thLbl"></small><div class="th-seg" role="group"><button type="button" id="thAuto" onclick="setTheme('auto')" data-i18n="thAuto"></button><button type="button" id="thLight" onclick="setTheme('light')" data-i18n="thLight"></button><button type="button" id="thDark" onclick="setTheme('dark')" data-i18n="thDark"></button></div><button onclick="signOut()" data-i18n="lgOut"></button></div></div>
 
 <div class="login hidden" id="login" role="dialog" aria-modal="true" aria-labelledby="lgT">
   <div class="lang" role="group" aria-label="Idioma / Language"><button id="lgEs" onclick="setLang('es')">ES</button><button id="lgEn" onclick="setLang('en')">EN</button></div>
@@ -743,6 +764,7 @@
         <button class="subtab" id="subWeek" role="tab" onclick="showPerf('week')" data-i18n="pWeek">Semanal</button>
         <button class="subtab" id="subToday" role="tab" onclick="showPerf('today')" data-i18n="pToday">Hoy</button>
         <button class="subtab" id="subAcc" role="tab" onclick="showPerf('acc')" data-i18n="pAcc">Calidad de datos</button>
+        <button class="subtab" id="subTb" role="tab" onclick="showPerf('tb')" data-i18n="tbTab">Bloques de tiempo</button>
       </div>
       <div id="perfWeek"></div>
       <div id="perfToday" class="hidden"></div>
@@ -750,6 +772,7 @@
       <div id="perfTl" class="hidden"></div>
       <div id="perfSum" class="hidden"></div>
       <div id="perfWk" class="hidden"></div>
+      <div id="perfTb" class="hidden"></div>
     </div>
     <div id="milView" class="hidden">
       <div class="subtabs" role="tablist">
@@ -856,6 +879,25 @@
 })();
 </script>
 <script>
+  // ---------- Appearance (Auto / Light / Dark) ----------
+  function themePref() { try { var x = localStorage.getItem('ctgTheme'); return (x === 'light' || x === 'dark') ? x : 'auto'; } catch (e) { return 'auto'; } }
+  function updateThemeBtns() {
+    var cur = themePref();
+    ['Auto', 'Light', 'Dark'].forEach(function (n) {
+      var b = document.getElementById('th' + n);
+      if (!b) return;
+      var on = (n.toLowerCase() === cur);
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+  function setTheme(p) {
+    try { if (p === 'auto') localStorage.removeItem('ctgTheme'); else localStorage.setItem('ctgTheme', p); } catch (e) {}
+    if (p === 'light' || p === 'dark') document.documentElement.setAttribute('data-theme', p); else document.documentElement.removeAttribute('data-theme');
+    updateThemeBtns();
+  }
+  updateThemeBtns();
+
   var DEEP = (function () { var q = new URLSearchParams(location.search), d = {}; if (q.get('manager')) d.manager = q.get('manager'); var l = q.get('lang'); if (l === 'en' || l === 'es') d.lang = l; return d; })(); // link parameters from the reminder mail (?manager=Name&lang=es) // replaced by the server with the link parameters
   var S = { init: null, manager: null, week: 1, groups: [], vals: {}, dirty: {}, review: false, overview: null, perf: null };
 
@@ -869,7 +911,7 @@ landSearchPh: 'Buscar páginas y enlaces…', landSearchNone: 'No se encontró n
       raceTab: 'La carrera', milTab: 'Millas', perfTab: 'Rendimiento', scoreTab: 'Puntos',
       askTab: 'Preguntar', landAskD: 'Pregunta por plantas, el plan y los pedidos', askTitle: 'Pregunta a los datos', askSub: 'Escribe una pregunta, por ejemplo una planta y un mes. Busca en el plan de producción y en los pedidos (sin IA por ahora).', askPh: 'Escribe tu pregunta…', askSend: 'Preguntar', askEx1: 'Aeonium noviembre', askEx2: 'Cuántos 4in en diciembre', askEx3: 'Pedidos que llegan esta semana', askBusy: 'Buscando en los datos…', askErr: 'No se pudo buscar: ', askHelp: 'No entendí qué buscar. Escribe el nombre de la planta y, si quieres, un mes (noviembre), una semana (esta semana) o un tamaño (4in).', askNone: 'Sin resultados', askSrc: 'Fuentes de datos', askSrcTitle: 'Datos conectados', askSrcSub: 'De aquí lee la pestaña Preguntar. Cada fuente abre su hoja.', askSrcOpen: 'Abrir hoja', askSrcTab: 'Pestaña', askSrcX: 'Cerrar', askS1: 'Plan de producción: qué se debe sembrar, por fecha de siembra.', askS2: 'Pedidos URC: pedidos de esquejes sin enraizar.', askS3: 'Siembra terminada: lo ya sembrado, con fecha lista.', askS4: 'Siembra de plugs: plugs ya sembrados, con fecha lista.', askS5: 'Llegadas: lo que llega, solo la semana actual.',
 askNew: 'Nueva pregunta', askMore: 'Mostrar {n} filas más', askLess: 'Mostrar menos', askCut: '{n} filas más no se muestran (afina la pregunta)', askFooter: 'Modo búsqueda en los datos (sin IA) · {s} s', askLines: 'filas', wwTab: 'Semana', wwTitle: 'Semana de trabajo {w}', wwSub: 'La misma lista que la app CTG Planting: los pedidos incoming de la semana, con su meta y fecha de plantado. Se marcan al plantarse.', wwOpen: 'Abrir la hoja', wwStatus: 'Estado', wwArea: 'Entrada', wwPeriod: 'Periodo', wwRem: 'Pendiente', wwPlanted: 'Plantado', wwPlanned: 'Unidades planeadas', wwPct: '% pendiente', wwHours: 'Horas pendientes', wwWorkers: 'Personas necesarias', wwHint: 'Toca el número de Pendiente para ver cuánto falta por proveedor y por artículo.', wwErr: 'No se pudo cargar la semana de trabajo: ', wwMissing: 'Falta la pestaña IMPORT work week en la hoja.', wwImport: 'La pestaña IMPORT work week no tiene datos (revisa que la importación tenga acceso).', wwLeftTip: '{l}% pendiente · meta {g}%', wwNone: 'No falta plantar nada.', wwLeftItems: 'Artículos por plantar', wwOvRem: 'Pendiente en el resumen', wwDiff: 'El resumen resta todo lo plantado, también artículos fuera del plan, por eso puede ser menor que esta lista.', wwByVendor: 'Por proveedor', wwItems: 'Artículos', wwSortPrio: 'Por prioridad', wwSortVend: 'Por proveedor', wwPrioTip: 'Prioridad {n} (1 = la más alta), según el # de planta', wwPrioNone: 'Sin prioridad', wwPrioErr: 'No se pudieron leer las prioridades ahora.', wwItem1: '{n} artículo', wwItemN: '{n} artículos',
-      startTab: 'Empezar', navBack: 'Atrás', lgWelcome: 'Bienvenido a CTG App', lgSub: 'Cascade Tropicals · herramientas del equipo', lgLabel: 'Tu nombre', lgGo: 'Entrar', lgHint: 'Escribe tu nombre como lo conoce el equipo. Por ahora no hace falta contraseña.', lgOut: 'Cambiar de usuario', lgAs: 'Sesión de', landHi: 'Hola, {n}', landHi0: 'Hola', landSec: '¿A dónde quieres ir?', landStartD: 'Enlaces y herramientas del equipo', landWorkD: 'Lo que llega esta semana y lo que falta por plantar', landPerfD: 'Velocidad de plantado y la carrera de Millas', landMilD: 'La carrera y los puntos del ciclo de 10 semanas', lnSearch: 'Buscar enlaces…', lnSearchIn: 'Buscar en', lnHome: 'Todos los temas', lnHi: 'Hola,', lnChange: 'cambiar', lnPickName: 'Elige tu nombre para guardar favoritos', lnWho: '¿Quién eres?', lnAskQ: 'Escribe tu nombre', lnAskGo: 'Continuar', lnAskBad: 'Escribe tu nombre (2 a 40 letras).', lnNoName: 'Quitar mi nombre', lnTop: 'Lo más importante', lnFavs: 'Mis favoritos', lnFavNoName: 'Elige tu nombre (arriba) y toca el corazón en un enlace para guardarlo aquí.', lnFavNone: 'Toca el corazón en un enlace para guardarlo aquí.', lnFav: 'Favorito', lnThemes: 'Temas', lnEmpty: 'Aún no hay enlaces. Toca “Editar” para agregar el primero.', lnNone: 'Ningún enlace coincide con tu búsqueda.', lnMissing: 'Falta la pestaña START links en la hoja.', lnErr: 'No se pudieron cargar los enlaces: ', lnEdit: 'Editar', lnDel: 'Borrar', lnDelQ: '¿Borrar?', lnYes: 'Sí', lnNo: 'No', lnEditOn: 'Editar enlaces', lnEditOff: 'Terminar de editar', lnAddLink: 'Agregar enlace', lnNewTheme: 'Nuevo tema', lnFTheme: 'Tema (producción, rendimiento…)', lnFTitle: 'Título', lnFLink: 'Enlace (https://…)', lnFDesc: 'Descripción (español)', lnFDescEn: 'Descripción (inglés)', lnFIcon: 'Icono (un emoji, opcional)', lnFFeat: 'Destacado (aparece en “Lo más importante”)', lnFOrder: 'Orden dentro del tema (opcional, número)', lnSave: 'Guardar', lnCancel: 'Cancelar', lnNewT: 'Nuevo enlace', lnEditT: 'Editar enlace', lnSaved: 'Guardado', lnDeleted: 'Borrado', lnBad: 'Escribe un título y un enlace que empiece con http:// o https://', lnSaveErr: 'No se pudo guardar: ', lnC1: '{n} enlace', lnCN: '{n} enlaces', lnEditBtn: 'Editar', lnDoneBtn: 'Listo', lnEditNote: 'Modo editar: arrastra ⠿ para ordenar enlaces y temas, cambia o borra con los botones y agrega enlaces en cada sección. Toca “Listo” al terminar.', lnDrag: 'Arrastra para ordenar', lnThemeDelQ: '¿Borrar el tema con sus {n} enlaces?', lnFThName: 'Nombre del tema', lnFThEn: 'Nombre en inglés (opcional)', lnFThIcon: 'Icono (un emoji, opcional)', lnThemeNew: '＋ Tema nuevo…', lnFNewTheme: 'Nombre del tema nuevo', lnThEditT: 'Editar tema', lnBadTh: 'Escribe el nombre del tema.', lnLinkShort: 'Enlace',
+      startTab: 'Empezar', navBack: 'Atrás', lgWelcome: 'Bienvenido a CTG App', lgSub: 'Cascade Tropicals · herramientas del equipo', lgLabel: 'Tu nombre', lgGo: 'Entrar', lgHint: 'Escribe tu nombre como lo conoce el equipo. Por ahora no hace falta contraseña.', lgOut: 'Cambiar de usuario', thLbl: 'Apariencia', thAuto: 'Automático', thLight: 'Claro', thDark: 'Oscuro', tbTab: 'Bloques de tiempo', tbNote: 'Tiempo que no es de siembra (una reuni\u00f3n, una capacitaci\u00f3n ...). Los minutos dentro de un bloque se quitan de las horas de la persona, para que su velocidad no se vea afectada.', tbPerson: 'Persona', tbEveryone: 'Todos', tbDay: 'D\u00eda', tbFrom: 'Desde', tbTo: 'Hasta', tbReason: 'Motivo', tbMeeting: 'Reuni\u00f3n', tbTraining: 'Capacitaci\u00f3n', tbOther: 'Otro', tbAdd: 'Agregar bloque', tbDel: 'Borrar', tbSure: 'Toca otra vez para borrar', tbNone: 'No hay bloques de tiempo en los \u00faltimos 90 d\u00edas.', tbOnlyMgr: 'Solo los gerentes pueden agregar o borrar bloques de tiempo.', tbErr: 'No se pudieron cargar los bloques de tiempo: ', tbBadTime: 'La hora final debe ser despu\u00e9s de la inicial.', lgAs: 'Sesión de', landHi: 'Hola, {n}', landHi0: 'Hola', landSec: '¿A dónde quieres ir?', landStartD: 'Enlaces y herramientas del equipo', landWorkD: 'Lo que llega esta semana y lo que falta por plantar', landPerfD: 'Velocidad de plantado y la carrera de Millas', landMilD: 'La carrera y los puntos del ciclo de 10 semanas', lnSearch: 'Buscar enlaces…', lnSearchIn: 'Buscar en', lnHome: 'Todos los temas', lnHi: 'Hola,', lnChange: 'cambiar', lnPickName: 'Elige tu nombre para guardar favoritos', lnWho: '¿Quién eres?', lnAskQ: 'Escribe tu nombre', lnAskGo: 'Continuar', lnAskBad: 'Escribe tu nombre (2 a 40 letras).', lnNoName: 'Quitar mi nombre', lnTop: 'Lo más importante', lnFavs: 'Mis favoritos', lnFavNoName: 'Elige tu nombre (arriba) y toca el corazón en un enlace para guardarlo aquí.', lnFavNone: 'Toca el corazón en un enlace para guardarlo aquí.', lnFav: 'Favorito', lnThemes: 'Temas', lnEmpty: 'Aún no hay enlaces. Toca “Editar” para agregar el primero.', lnNone: 'Ningún enlace coincide con tu búsqueda.', lnMissing: 'Falta la pestaña START links en la hoja.', lnErr: 'No se pudieron cargar los enlaces: ', lnEdit: 'Editar', lnDel: 'Borrar', lnDelQ: '¿Borrar?', lnYes: 'Sí', lnNo: 'No', lnEditOn: 'Editar enlaces', lnEditOff: 'Terminar de editar', lnAddLink: 'Agregar enlace', lnNewTheme: 'Nuevo tema', lnFTheme: 'Tema (producción, rendimiento…)', lnFTitle: 'Título', lnFLink: 'Enlace (https://…)', lnFDesc: 'Descripción (español)', lnFDescEn: 'Descripción (inglés)', lnFIcon: 'Icono (un emoji, opcional)', lnFFeat: 'Destacado (aparece en “Lo más importante”)', lnFOrder: 'Orden dentro del tema (opcional, número)', lnSave: 'Guardar', lnCancel: 'Cancelar', lnNewT: 'Nuevo enlace', lnEditT: 'Editar enlace', lnSaved: 'Guardado', lnDeleted: 'Borrado', lnBad: 'Escribe un título y un enlace que empiece con http:// o https://', lnSaveErr: 'No se pudo guardar: ', lnC1: '{n} enlace', lnCN: '{n} enlaces', lnEditBtn: 'Editar', lnDoneBtn: 'Listo', lnEditNote: 'Modo editar: arrastra ⠿ para ordenar enlaces y temas, cambia o borra con los botones y agrega enlaces en cada sección. Toca “Listo” al terminar.', lnDrag: 'Arrastra para ordenar', lnThemeDelQ: '¿Borrar el tema con sus {n} enlaces?', lnFThName: 'Nombre del tema', lnFThEn: 'Nombre en inglés (opcional)', lnFThIcon: 'Icono (un emoji, opcional)', lnThemeNew: '＋ Tema nuevo…', lnFNewTheme: 'Nombre del tema nuevo', lnThEditT: 'Editar tema', lnBadTh: 'Escribe el nombre del tema.', lnLinkShort: 'Enlace',
       scPick: 'Persona', scHint: 'Toca una celda de puntos para ver cómo se calificó.', scErr: 'No se pudieron cargar los puntos: ', scNoPeople: 'No se encontraron personas en la hoja DASH.',
       scTask: 'Tarea', scPts: 'Millas', scTotal: 'Total',
       scKeyFull: 'Puntos completos', scKeyPart: 'Puntos parciales', scKeyZero: 'Sin puntos', scKeyNone: 'Aún sin calificar',
@@ -931,7 +973,7 @@ landSearchPh: 'Search pages and links…', landSearchNone: 'Nothing found', land
       raceTab: 'The race', milTab: 'Millas', perfTab: 'Performance', scoreTab: 'Scores',
       askTab: 'Ask', landAskD: 'Ask about plants, the plan and orders', askTitle: 'Ask the data', askSub: 'Type a question, for example a plant and a month. It looks in the production plan and the orders (no AI yet).', askPh: 'Type your question…', askSend: 'Ask', askEx1: 'Aeonium November', askEx2: 'How many 4in in December', askEx3: 'Orders arriving this week', askBusy: 'Looking in the data…', askErr: 'Could not search: ', askHelp: 'I did not understand what to look for. Type the plant name and, if you like, a month (November), a week (this week) or a size (4in).', askNone: 'No results', askSrc: 'Data sources', askSrcTitle: 'Connected data', askSrcSub: 'This is what the Ask tab reads. Each source opens its sheet.', askSrcOpen: 'Open sheet', askSrcTab: 'Tab', askSrcX: 'Close', askS1: 'Production Plan: what has to be planted, by plant date.', askS2: 'URC orders: orders for unrooted cuttings.', askS3: 'Finished planting: what was already planted, with ready date.', askS4: 'Plug planting: plugs already planted, with ready date.', askS5: 'Incoming: what is arriving, current week only.',
 askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', askCut: '{n} more rows not shown (narrow the question)', askFooter: 'Data lookup mode (no AI) · {s} s', askLines: 'rows', wwTab: 'Work week', wwTitle: 'Work week {w}', wwSub: 'Same list as the CTG Planting app: this week\'s incoming orders, with goal and plant date for each. Items are ticked off as they get planted.', wwOpen: 'Open the sheet', wwStatus: 'Status', wwArea: 'Incoming', wwPeriod: 'Period', wwRem: 'Remaining', wwPlanted: 'Planted', wwPlanned: 'Units planned', wwPct: '% left', wwHours: 'Hours remaining', wwWorkers: 'Workers needed', wwHint: 'Tap the Remaining number to see what is left by vendor and by item.', wwErr: 'Could not load the work week: ', wwMissing: 'The IMPORT work week tab is missing in the sheet.', wwImport: 'The IMPORT work week tab has no data (check that the import has access).', wwLeftTip: '{l}% left · target {g}%', wwNone: 'Nothing left to plant.', wwLeftItems: 'Items not yet planted', wwOvRem: 'Remaining in the overview', wwDiff: 'The overview subtracts everything planted, including items outside the plan, so it can be lower than this list.', wwByVendor: 'By vendor', wwItems: 'Items', wwSortPrio: 'By priority', wwSortVend: 'By vendor', wwPrioTip: 'Priority {n} (1 = highest), based on plant #', wwPrioNone: 'No priority', wwPrioErr: 'Could not read the priorities right now.', wwItem1: '{n} item', wwItemN: '{n} items',
-      startTab: 'Start', navBack: 'Back', lgWelcome: 'Welcome to CTG App', lgSub: 'Cascade Tropicals · team tools', lgLabel: 'Your name', lgGo: 'Enter', lgHint: 'Type your name as the team knows it. No password needed for now.', lgOut: 'Switch user', lgAs: 'Signed in as', landHi: 'Hi, {n}', landHi0: 'Hi', landSec: 'Where do you want to go?', landStartD: 'Links and tools for the team', landWorkD: 'What arrives this week and what is left to plant', landPerfD: 'Planting speed and the Millas race', landMilD: 'The race and scores for the 10-week cycle', lnSearch: 'Search links…', lnSearchIn: 'Search in', lnHome: 'All themes', lnHi: 'Hi,', lnChange: 'change', lnPickName: 'Pick your name to save favorites', lnWho: 'Who are you?', lnAskQ: 'Enter your name', lnAskGo: 'Continue', lnAskBad: 'Type your name (2 to 40 characters).', lnNoName: 'Remove my name', lnTop: 'Most important', lnFavs: 'My favorites', lnFavNoName: 'Pick your name (above), then tap the heart on a link to save it here.', lnFavNone: 'Tap the heart on a link to save it here.', lnFav: 'Favorite', lnThemes: 'Themes', lnEmpty: 'No links yet. Tap “Edit” to add the first one.', lnNone: 'No link matches your search.', lnMissing: 'The START links tab is missing in the sheet.', lnErr: 'Could not load the links: ', lnEdit: 'Edit', lnDel: 'Delete', lnDelQ: 'Delete?', lnYes: 'Yes', lnNo: 'No', lnEditOn: 'Edit links', lnEditOff: 'Done editing', lnAddLink: 'Add link', lnNewTheme: 'New theme', lnFTheme: 'Theme (production, performance…)', lnFTitle: 'Title', lnFLink: 'Link (https://…)', lnFDesc: 'Description (Spanish)', lnFDescEn: 'Description (English)', lnFIcon: 'Icon (one emoji, optional)', lnFFeat: 'Featured (shows in “Most important”)', lnFOrder: 'Order inside the theme (optional, number)', lnSave: 'Save', lnCancel: 'Cancel', lnNewT: 'New link', lnEditT: 'Edit link', lnSaved: 'Saved', lnDeleted: 'Deleted', lnBad: 'Enter a title and a link that starts with http:// or https://', lnSaveErr: 'Could not save: ', lnC1: '{n} link', lnCN: '{n} links', lnEditBtn: 'Edit', lnDoneBtn: 'Done', lnEditNote: 'Edit mode: drag ⠿ to reorder links and themes, change or delete with the buttons, and add links in every section. Tap “Done” when finished.', lnDrag: 'Drag to reorder', lnThemeDelQ: 'Delete the theme with its {n} links?', lnFThName: 'Theme name', lnFThEn: 'English name (optional)', lnFThIcon: 'Icon (one emoji, optional)', lnThemeNew: '＋ New theme…', lnFNewTheme: 'Name of the new theme', lnThEditT: 'Edit theme', lnBadTh: 'Type the theme name.', lnLinkShort: 'Link',
+      startTab: 'Start', navBack: 'Back', lgWelcome: 'Welcome to CTG App', lgSub: 'Cascade Tropicals · team tools', lgLabel: 'Your name', lgGo: 'Enter', lgHint: 'Type your name as the team knows it. No password needed for now.', lgOut: 'Switch user', thLbl: 'Appearance', thAuto: 'Auto', thLight: 'Light', thDark: 'Dark', tbTab: 'Time blocks', tbNote: 'Time that is not planting time (a meeting, training ...). The minutes inside a block are taken out of the person\'s hours, so their speed is not hurt.', tbPerson: 'Person', tbEveryone: 'Everyone', tbDay: 'Day', tbFrom: 'From', tbTo: 'To', tbReason: 'Reason', tbMeeting: 'Meeting', tbTraining: 'Training', tbOther: 'Other', tbAdd: 'Add time block', tbDel: 'Delete', tbSure: 'Tap again to delete', tbNone: 'No time blocks in the last 90 days.', tbOnlyMgr: 'Only managers can add or delete time blocks.', tbErr: 'Could not load the time blocks: ', tbBadTime: 'The end time must be after the start time.', lgAs: 'Signed in as', landHi: 'Hi, {n}', landHi0: 'Hi', landSec: 'Where do you want to go?', landStartD: 'Links and tools for the team', landWorkD: 'What arrives this week and what is left to plant', landPerfD: 'Planting speed and the Millas race', landMilD: 'The race and scores for the 10-week cycle', lnSearch: 'Search links…', lnSearchIn: 'Search in', lnHome: 'All themes', lnHi: 'Hi,', lnChange: 'change', lnPickName: 'Pick your name to save favorites', lnWho: 'Who are you?', lnAskQ: 'Enter your name', lnAskGo: 'Continue', lnAskBad: 'Type your name (2 to 40 characters).', lnNoName: 'Remove my name', lnTop: 'Most important', lnFavs: 'My favorites', lnFavNoName: 'Pick your name (above), then tap the heart on a link to save it here.', lnFavNone: 'Tap the heart on a link to save it here.', lnFav: 'Favorite', lnThemes: 'Themes', lnEmpty: 'No links yet. Tap “Edit” to add the first one.', lnNone: 'No link matches your search.', lnMissing: 'The START links tab is missing in the sheet.', lnErr: 'Could not load the links: ', lnEdit: 'Edit', lnDel: 'Delete', lnDelQ: 'Delete?', lnYes: 'Yes', lnNo: 'No', lnEditOn: 'Edit links', lnEditOff: 'Done editing', lnAddLink: 'Add link', lnNewTheme: 'New theme', lnFTheme: 'Theme (production, performance…)', lnFTitle: 'Title', lnFLink: 'Link (https://…)', lnFDesc: 'Description (Spanish)', lnFDescEn: 'Description (English)', lnFIcon: 'Icon (one emoji, optional)', lnFFeat: 'Featured (shows in “Most important”)', lnFOrder: 'Order inside the theme (optional, number)', lnSave: 'Save', lnCancel: 'Cancel', lnNewT: 'New link', lnEditT: 'Edit link', lnSaved: 'Saved', lnDeleted: 'Deleted', lnBad: 'Enter a title and a link that starts with http:// or https://', lnSaveErr: 'Could not save: ', lnC1: '{n} link', lnCN: '{n} links', lnEditBtn: 'Edit', lnDoneBtn: 'Done', lnEditNote: 'Edit mode: drag ⠿ to reorder links and themes, change or delete with the buttons, and add links in every section. Tap “Done” when finished.', lnDrag: 'Drag to reorder', lnThemeDelQ: 'Delete the theme with its {n} links?', lnFThName: 'Theme name', lnFThEn: 'English name (optional)', lnFThIcon: 'Icon (one emoji, optional)', lnThemeNew: '＋ New theme…', lnFNewTheme: 'Name of the new theme', lnThEditT: 'Edit theme', lnBadTh: 'Type the theme name.', lnLinkShort: 'Link',
       scPick: 'Person', scHint: 'Tap a score cell to see how it was scored.', scErr: 'Could not load the scores: ', scNoPeople: 'No people found on the DASH tab.',
       scTask: 'Task', scPts: 'Millas', scTotal: 'Total',
       scKeyFull: 'Full points', scKeyPart: 'Partial points', scKeyZero: 'No points', scKeyNone: 'Not scored yet',
@@ -1471,8 +1513,78 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
   setInterval(tickAge, 15000);
 
   // ---------- Performance > Today: one person's day, hour by hour, refreshed every minute ----------
+  // ---------- Time blocks (Performance > Time blocks): meetings, training ... taken out of the hours ----------
+  var TB = { data: null, ask: '', err: '', busy: false, f: { person: 'Everyone', day: '', from: '09:00', to: '10:00', reason: 'Meeting' } };
+  var TB_REASONS = ['Meeting', 'Training', 'Other'];
+  function tbToday() { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }); } catch (e) { return ''; } }
+  function tbIsMgr() {
+    var m = (TB.data && TB.data.managers) || [], n = String(ME || '').trim().toLowerCase();
+    for (var i = 0; i < m.length; i++) if (String(m[i]).toLowerCase() === n) return true;
+    return false;
+  }
+  function tbReasonTxt(r) { var k = { Meeting: 'tbMeeting', Training: 'tbTraining', Other: 'tbOther' }[r]; return k ? t(k) : r; }
+  function tbMinOf(v) { var m = String(v).match(/^(\d{1,2}):(\d{2})/); return m ? Number(m[1]) * 60 + Number(m[2]) : -1; }
+  function loadTb() {
+    var el = document.getElementById('perfTb');
+    if (!TB.f.day) TB.f.day = tbToday();
+    if (TB.data) renderTb(); else el.innerHTML = '<div class="skel"></div>';
+    google.script.run.withSuccessHandler(function (d) { TB.data = d; renderTb(); })
+      .withFailureHandler(function (e) { if (!TB.data) el.innerHTML = '<div class="err">' + esc(t('tbErr') + errMsg(e)) + '</div>'; })
+      .getTimeBlocks();
+  }
+  function renderTb() {
+    var el = document.getElementById('perfTb'), d = TB.data;
+    if (!d) return;
+    var mgr = tbIsMgr(), f = TB.f;
+    var h = '<div class="perf-card"><h3>' + esc(t('tbTab')) + '</h3><p>' + esc(t('tbNote')) + '</p>';
+    if (mgr) {
+      var ppl = ['Everyone'].concat(d.people || []);
+      h += '<div class="tb-form">' +
+        '<label>' + esc(t('tbPerson')) + '<select onchange="TB.f.person=this.value">' + ppl.map(function (n) { return '<option value="' + esc(n) + '"' + (n === f.person ? ' selected' : '') + '>' + esc(n === 'Everyone' ? t('tbEveryone') : n) + '</option>'; }).join('') + '</select></label>' +
+        '<label>' + esc(t('tbDay')) + '<input type="date" value="' + esc(f.day) + '" onchange="TB.f.day=this.value"></label>' +
+        '<label>' + esc(t('tbFrom')) + '<input type="time" value="' + esc(f.from) + '" onchange="TB.f.from=this.value"></label>' +
+        '<label>' + esc(t('tbTo')) + '<input type="time" value="' + esc(f.to) + '" onchange="TB.f.to=this.value"></label>' +
+        '<label>' + esc(t('tbReason')) + '<select onchange="TB.f.reason=this.value">' + TB_REASONS.map(function (r) { return '<option value="' + r + '"' + (r === f.reason ? ' selected' : '') + '>' + esc(tbReasonTxt(r)) + '</option>'; }).join('') + '</select></label>' +
+        '<button type="button" class="tb-add" onclick="tbAdd()"' + (TB.busy ? ' disabled' : '') + '>' + esc(t('tbAdd')) + '</button></div>';
+      if (TB.err) h += '<div class="err">' + esc(TB.err) + '</div>';
+    } else {
+      h += '<p class="tb-mgr">' + esc(t('tbOnlyMgr')) + '</p>';
+    }
+    h += '</div>';
+    if (!d.blocks.length) {
+      h += '<div class="empty">' + esc(t('tbNone')) + '</div>';
+    } else {
+      var cur = '';
+      h += '<div class="perf-card"><div class="tb-list">';
+      d.blocks.forEach(function (b) {
+        if (b.day !== cur) { cur = b.day; h += '<div class="tb-day">' + esc(dayLabel(b.day)) + '</div>'; }
+        h += '<div class="tb-row"><div class="tb-who"><b>' + esc(b.person === 'Everyone' ? t('tbEveryone') : b.person) + '</b><span>' + esc(clockTxt(b.from) + ' \u2013 ' + clockTxt(b.to)) + '</span></div><div class="tb-why">' + esc(tbReasonTxt(b.reason)) + (b.by ? ' \u00b7 ' + esc(b.by) : '') + '</div>' +
+          (mgr ? '<button type="button" class="tb-del' + (TB.ask === b.id ? ' on' : '') + '" onclick="tbDel(\'' + esc(b.id) + '\')">' + esc(TB.ask === b.id ? t('tbSure') : t('tbDel')) + '</button>' : '') + '</div>';
+      });
+      h += '</div></div>';
+    }
+    el.innerHTML = h;
+  }
+  function tbAdd() {
+    var f = TB.f, a = tbMinOf(f.from), b = tbMinOf(f.to);
+    TB.err = '';
+    if (!f.day || a < 0 || b <= a) { TB.err = t('tbBadTime'); renderTb(); return; }
+    TB.busy = true; renderTb();
+    google.script.run.withSuccessHandler(function (d) { TB.busy = false; TB.data = d; renderTb(); })
+      .withFailureHandler(function (e) { TB.busy = false; TB.err = errMsg(e); renderTb(); })
+      .saveTimeBlock({ day: f.day, person: f.person, from: a, to: b, reason: f.reason }, ME);
+  }
+  function tbDel(id) {
+    if (TB.ask !== id) { TB.ask = id; renderTb(); return; }
+    TB.ask = ''; TB.busy = true;
+    google.script.run.withSuccessHandler(function (d) { TB.busy = false; TB.data = d; renderTb(); })
+      .withFailureHandler(function (e) { TB.busy = false; TB.err = errMsg(e); renderTb(); })
+      .deleteTimeBlock(id, ME);
+  }
+
   function showPerf(sub) {
     TD.sub = sub === 'today' ? 'today' : (sub === 'acc' ? 'acc' : (sub === 'tl' ? 'tl' : (sub === 'sum' ? 'sum' : (sub === 'wk' ? 'wk' : 'week'))));
+    if (sub === 'tb') TD.sub = 'tb';
     var td = TD.sub === 'today', ac = TD.sub === 'acc', tl = TD.sub === 'tl', sm = TD.sub === 'sum', wkv = TD.sub === 'wk';
     document.getElementById('subSum').classList.toggle('on', sm);
     document.getElementById('subWk').classList.toggle('on', wkv);
@@ -1486,6 +1598,9 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
     document.getElementById('perfWeek').classList.toggle('hidden', TD.sub !== 'week');
     document.getElementById('perfToday').classList.toggle('hidden', !td);
     document.getElementById('perfAcc').classList.toggle('hidden', !ac);
+    document.getElementById('subTb').classList.toggle('on', TD.sub === 'tb');
+    document.getElementById('perfTb').classList.toggle('hidden', TD.sub !== 'tb');
+    if (TD.sub === 'tb') loadTb();
     if (td) loadToday();
     if (ac) loadAcc();
     if (tl || sm || wkv) loadTl();
