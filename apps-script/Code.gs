@@ -1359,12 +1359,95 @@ function askQuestion(question) {
 var GOOGLE_CLIENT_ID = '796335216653-im30hq9jmqe028l7fsjapeqnu5ptrqt6.apps.googleusercontent.com';
 var API_SESSION_DAYS = 7;
 
+// ---------- Time blocks (meetings, training ...): minutes that are not planting time ----------
+// Tab 'TIME BLOCKS' (header row 4, data from row 5): A date, B person (or Everyone), C from, D to (time of day as a fraction of a day), E reason, F added by, G added at, H id.
+// The CG Inventory App reads this tab and takes the minutes out of the gaps between records. Only managers can add or delete.
+function tbMin_(x, tz) {
+  if (x instanceof Date) { var p = Utilities.formatDate(x, tz, 'HH:mm').split(':'); return Number(p[0]) * 60 + Number(p[1]); }
+  var n = Number(x); if (x === '' || isNaN(n)) return -1;
+  return Math.round(n * 1440);
+}
+function tbIsManager_(name) {
+  var n = String(name || '').trim().toLowerCase();
+  for (var i = 0; i < MANAGERS.length; i++) if (MANAGERS[i].toLowerCase() === n) return true;
+  return false;
+}
+function getTimeBlocks() {
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID), tz = ss.getSpreadsheetTimeZone();
+  var sh = ss.getSheetByName('TIME BLOCKS');
+  if (!sh) return { error: 'nosheet', blocks: [], people: [], managers: MANAGERS };
+  var cutKey = Utilities.formatDate(new Date(Date.now() - 90 * 86400000), tz, 'yyyy-MM-dd');
+  var last = sh.getLastRow(), blocks = [];
+  if (last >= 5) {
+    sh.getRange(5, 1, last - 4, 8).getValues().forEach(function (r, i) {
+      if (!(r[0] instanceof Date) || !String(r[1]).trim()) return;
+      var f = tbMin_(r[2], tz), t = tbMin_(r[3], tz);
+      if (f < 0 || t <= f) return;
+      var day = Utilities.formatDate(r[0], tz, 'yyyy-MM-dd');
+      if (day < cutKey) return;
+      blocks.push({ id: String(r[7] || '') || ('r' + (i + 5)), day: day, person: String(r[1]).trim(), from: f, to: t, reason: String(r[4] || '').trim(), by: String(r[5] || '').trim() });
+    });
+  }
+  blocks.sort(function (a, b) { return a.day < b.day ? 1 : (a.day > b.day ? -1 : a.from - b.from); });
+  // people = names seen in the planting records (same spelling as the source tab)
+  var seen = {}, people = [];
+  var pe = ss.getSheetByName('IMPORT planting entries');
+  if (pe && pe.getLastRow() >= 5) pe.getRange(5, 4, pe.getLastRow() - 4, 1).getValues().forEach(function (r) {
+    var n = String(r[0]).trim();
+    if (n && !seen[n]) { seen[n] = 1; people.push(n); }
+  });
+  people.sort();
+  return { blocks: blocks, people: people, managers: MANAGERS };
+}
+function tbWrite_(fn) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try { fn(SpreadsheetApp.openById(SPREADSHEET_ID)); SpreadsheetApp.flush(); } finally { lock.releaseLock(); }
+  return getTimeBlocks();
+}
+// b = { day: 'yyyy-MM-dd', person, from: minutes, to: minutes, reason }; by = the signed-in name (must be a manager)
+function saveTimeBlock(b, by) {
+  if (!tbIsManager_(by)) throw new Error('Only managers can add time blocks.');
+  var day = String(b && b.day || '');
+  var person = String(b && b.person || '').trim();
+  var from = Number(b && b.from), to = Number(b && b.to);
+  var reason = String(b && b.reason || '').trim().slice(0, 60);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !person || person.length > 40) throw new Error('Check the day and the person.');
+  if (isNaN(from) || isNaN(to) || from < 0 || to > 1440 || to <= from) throw new Error('Check the times: the end must be after the start.');
+  return tbWrite_(function (ss) {
+    var sh = ss.getSheetByName('TIME BLOCKS');
+    if (!sh) throw new Error('The TIME BLOCKS tab is missing.');
+    var tz = ss.getSpreadsheetTimeZone();
+    var row = Math.max(sh.getLastRow(), 4) + 1;
+    sh.getRange(row, 1, 1, 8).setValues([[Utilities.parseDate(day, tz, 'yyyy-MM-dd'), person, from / 1440, to / 1440, reason, String(by).trim(), new Date(), Utilities.getUuid().slice(0, 8)]]);
+    sh.getRange(row, 1).setNumberFormat('m/d/yyyy');
+    sh.getRange(row, 3, 1, 2).setNumberFormat('h:mm AM/PM');
+    sh.getRange(row, 7).setNumberFormat('m/d/yyyy h:mm AM/PM');
+  });
+}
+function deleteTimeBlock(id, by) {
+  if (!tbIsManager_(by)) throw new Error('Only managers can delete time blocks.');
+  id = String(id || '');
+  if (!id) throw new Error('No block.');
+  return tbWrite_(function (ss) {
+    var sh = ss.getSheetByName('TIME BLOCKS');
+    if (!sh) throw new Error('The TIME BLOCKS tab is missing.');
+    var last = sh.getLastRow();
+    if (last < 5) return;
+    var ids = sh.getRange(5, 8, last - 4, 1).getValues();
+    for (var i = 0; i < ids.length; i++) {
+      if ((String(ids[i][0]) || ('r' + (i + 5))) === id) { sh.deleteRow(i + 5); return; }
+    }
+  });
+}
+
 function apiFunctions_() {
   return {
     getInit: getInit, getTasks: getTasks, saveScores: saveScores, getOverview: getOverview, getPerformance: getPerformance, getToday: getToday,
     getAccuracy: getAccuracy, getTimeline: getTimeline, getRawEntries: getRawEntries, getScoreTable: getScoreTable, startPeople: startPeople,
     startFavs: startFavs, getLinks: getLinks, saveLink: saveLink, deleteLink: deleteLink, reorderLinks: reorderLinks, renameTheme: renameTheme,
-    deleteTheme: deleteTheme, reorderThemes: reorderThemes, toggleFavorite: toggleFavorite, getWorkWeek: getWorkWeek, askQuestion: askQuestion
+    deleteTheme: deleteTheme, reorderThemes: reorderThemes, toggleFavorite: toggleFavorite, getWorkWeek: getWorkWeek, askQuestion: askQuestion,
+    getTimeBlocks: getTimeBlocks, saveTimeBlock: saveTimeBlock, deleteTimeBlock: deleteTimeBlock
   };
 }
 
