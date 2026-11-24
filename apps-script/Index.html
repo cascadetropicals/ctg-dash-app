@@ -1780,8 +1780,10 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
       list.forEach(function (r) {
         if (!(r[6] > 0)) return;
         var s0 = r[13] >= 0 ? r[13] : r[3] - r[6], e0 = r[3], segs = [];
-        if (s0 < 720 && e0 > 720) { segs.push([s0, 720]); if (e0 > 780) segs.push([780, e0]); }
-        else if (s0 >= 720 && s0 < 780) { if (e0 > 780) segs.push([780, e0]); }
+        // a record sent before 1 PM counts the whole time since the previous record (lunch not removed); later records lose the lunch hour
+        if (e0 < 780) segs.push([s0, e0]);
+        else if (s0 < 720) { segs.push([s0, 720]); segs.push([780, e0]); }
+        else if (s0 >= 720 && s0 < 780) segs.push([780, e0]);
         else segs.push([s0, e0]);
         var lunchCut = s0 < 720 && e0 > 780;
         var bt = '<div class="tt-h"><b>' + esc(t('ttBlock')) + '</b></div>' + row2(t('ttRange'), clockTxt(s0) + ' \u2013 ' + clockTxt(e0)) + row2(t('ttWorked'), t('ttMin', { n: fmt(r[6]) })) + (lunchCut ? row2(t('ttLunch'), t('ttMin', { n: 60 })) : '') + '<div class="tt-p" style="margin-top:6px">' + esc(r[8]) + '</div>' + row2(t('ttPlanted'), fmt(r[4]));
