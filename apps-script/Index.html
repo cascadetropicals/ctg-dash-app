@@ -702,6 +702,28 @@
   .tb-actions { display: flex; justify-content: flex-end; }
   .tb-add { font: inherit; font-weight: 700; font-size: 14.5px; color: var(--leaf-ink); background: var(--leaf); border: 0; border-radius: 10px; padding: 11px 22px; min-height: 44px; min-width: 170px; cursor: pointer; }
   .tb-add[disabled] { opacity: .6; cursor: default; }
+  /* Feedback popup (anonymous, about once a month): same card, chips and button as the rest of the app */
+  .fb { position: fixed; right: 20px; bottom: 20px; width: 380px; max-width: calc(100vw - 40px); max-height: calc(100vh - 40px); z-index: 55; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 40px rgba(23,36,27,.3); display: flex; flex-direction: column; }
+  .fb .det-body { padding-bottom: 16px; }
+  .fb-dots { display: flex; gap: 6px; margin: 4px 0 12px; }
+  .fb-dots i { flex: 1; height: 4px; border-radius: 2px; background: var(--track); }
+  .fb-dots i.on { background: var(--leaf); }
+  .fb-q { margin: 0 0 14px; font-size: 16px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+  .fb-sc { display: flex; gap: 8px; }
+  .fb-sc .chip { flex: 1; min-height: 44px; padding: 0; font-size: 16px; border-radius: 10px; }
+  .fb-ends { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 12px; color: var(--ink-3); }
+  .fb-opt { display: block; width: 100%; text-align: left; min-height: 44px; margin: 0 0 8px; border-radius: 10px; font: inherit; font-size: 15px; font-weight: 600; }
+  .fb-ta { font: inherit; font-size: 15px; font-weight: 500; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-height: 96px; width: 100%; box-sizing: border-box; resize: vertical; }
+  .fb-note { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-3); }
+  .fb-err { margin: 10px 0 0; font-size: 13.5px; font-weight: 600; color: var(--bad); }
+  .fb-nav { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; }
+  .fb-link { border: 0; background: none; font: inherit; font-size: 14px; font-weight: 700; color: var(--leaf-dark); cursor: pointer; padding: 10px 4px; min-height: 44px; }
+  .fb-nav .tb-add { min-width: 0; flex: 1; }
+  .fb-done { text-align: center; padding: 10px 0 0; }
+  .fb-done b { display: block; font-size: 18px; margin-bottom: 4px; }
+  .fb-done span { color: var(--ink-3); font-size: 14px; }
+  .umenu .fb-menu { margin-bottom: 8px; }
+  @media (max-width: 640px) { .fb { left: 0; right: 0; bottom: 0; width: auto; max-width: none; max-height: 88vh; border-radius: 12px 12px 0 0; padding-bottom: env(safe-area-inset-bottom); } }
   .tb-mgr { color: var(--ink-3); font-size: 13px; margin: 8px 0 0; }
   .tb-list { margin: 0 16px; }
   .tb-day { margin: 14px 0 6px; font-weight: 700; font-size: 13px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .04em; }
@@ -724,7 +746,7 @@
   <div class="lang" role="group" aria-label="Idioma / Language"><button id="langEs" onclick="setLang('es')">ES</button><button id="langEn" onclick="setLang('en')">EN</button></div>
   <button class="me-chip hidden" id="meChip" onclick="toggleUserMenu()" aria-haspopup="true"><span class="me-av" id="meAv"></span><span class="me-nm" id="meNm"></span></button>
 </div>
-<div class="umenu hidden" id="uMenu"><small data-i18n="lgAs"></small><b id="uName"></b><small class="th-lbl" data-i18n="thLbl"></small><div class="th-seg" role="group"><button type="button" id="thAuto" onclick="setTheme('auto')" data-i18n="thAuto"></button><button type="button" id="thLight" onclick="setTheme('light')" data-i18n="thLight"></button><button type="button" id="thDark" onclick="setTheme('dark')" data-i18n="thDark"></button></div><button onclick="signOut()" data-i18n="lgOut"></button></div></div>
+<div class="umenu hidden" id="uMenu"><small data-i18n="lgAs"></small><b id="uName"></b><small class="th-lbl" data-i18n="thLbl"></small><div class="th-seg" role="group"><button type="button" id="thAuto" onclick="setTheme('auto')" data-i18n="thAuto"></button><button type="button" id="thLight" onclick="setTheme('light')" data-i18n="thLight"></button><button type="button" id="thDark" onclick="setTheme('dark')" data-i18n="thDark"></button></div><button class="fb-menu" onclick="fbOpenMenu()" data-i18n="fbMenu"></button><button onclick="signOut()" data-i18n="lgOut"></button></div></div>
 
 <div class="login hidden" id="login" role="dialog" aria-modal="true" aria-labelledby="lgT">
   <div class="lang" role="group" aria-label="Idioma / Language"><button id="lgEs" onclick="setLang('es')">ES</button><button id="lgEn" onclick="setLang('en')">EN</button></div>
@@ -904,7 +926,9 @@ askNew: 'Nueva pregunta', askMore: 'Mostrar {n} filas más', askLess: 'Mostrar m
       noTasks: 'No hay tareas asignadas a {m} en la pestaña DASH.',
       noChanges: 'Sin cambios', unsavedOne: '{n} calificación sin guardar', unsavedMany: '{n} calificaciones sin guardar',
       save: 'Guardar', saving: 'Guardando…', savedOne: 'Guardada {n} calificación en DASH', savedMany: 'Guardadas {n} calificaciones en DASH',
-      notSaved: 'No se guardó: '
+      notSaved: 'No se guardó: ',
+      fbMenu: 'Dar tu opinión', fbTitle: 'Tu opinión', fbStep: 'Pregunta {a} de {b}', fbAnon: 'Anónimo', fbClose: 'Cerrar', fbBack: 'Atrás', fbNext: 'Siguiente', fbSkip: 'Omitir', fbSend: 'Enviar', fbSending: 'Enviando…',
+      fbThanks: '¡Gracias!', fbThanksSub: 'Tus respuestas son anónimas y nos ayudan a mejorar la app.', fbErr: 'No se pudo enviar. Tus respuestas siguen aquí, intenta de nuevo.', fbLoadErr: 'No se pudo abrir las preguntas. Intenta de nuevo.', fbScale: 'Del 1 al 5'
     },
     en: {
       scoring: 'Scoring', home: 'Home',
@@ -966,7 +990,9 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
       noTasks: 'No tasks assigned to {m} on the DASH tab.',
       noChanges: 'No changes', unsavedOne: '{n} unsaved score', unsavedMany: '{n} unsaved scores',
       save: 'Save', saving: 'Saving…', savedOne: 'Saved {n} score to DASH', savedMany: 'Saved {n} scores to DASH',
-      notSaved: 'Not saved: '
+      notSaved: 'Not saved: ',
+      fbMenu: 'Give feedback', fbTitle: 'Your feedback', fbStep: 'Question {a} of {b}', fbAnon: 'Anonymous', fbClose: 'Close', fbBack: 'Back', fbNext: 'Next', fbSkip: 'Skip', fbSend: 'Send', fbSending: 'Sending…',
+      fbThanks: 'Thank you!', fbThanksSub: 'Your answers are anonymous and help us improve the app.', fbErr: 'Could not send. Your answers are still here, please try again.', fbLoadErr: 'Could not open the questions. Please try again.', fbScale: 'From 1 to 5'
     }
   };
   var TAB_HIST = [], CUR_TAB = 'land', PM_SEC = 'perf'; // PM_SEC: which part of the Performance tab shows (perf or mil) // tabs visited before (the Back button goes to the last one)
@@ -1010,6 +1036,7 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
     if (WW) { closeWw(); renderWork(); }
     if (CUR_TAB === 'ask') renderChat();
     if (S.review) { renderChips(); load(true); }
+    if (FB.open) fbReload();
   }
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
@@ -1103,6 +1130,107 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
   showTab('land');
   if (!ME && !(DEEP && DEEP.manager)) showLogin(); // opened from a reminder mail: straight to scoring, no welcome page
 
+  // ---------- Feedback popup (anonymous, about once a month) ----------
+  // Questions and texts come from FEEDBACK_CONFIG in Code.gs. Nothing about who answers is sent. Rules: 3+ days of use, 30 days after an answer, snooze 7 days, 2 dismissals = skip the month, once per visit, never over another popup.
+  var FB = { open: false, auto: false, cfg: null, step: 0, sc: {}, use: '', note: '', busy: false, err: '', timer: 0, shown: false, tries: 0 };
+  var FB_K = { last: 'ctgFbLast', snooze: 'ctgFbSnooze', dis: 'ctgFbDismiss', round: 'ctgFbRound', skip: 'ctgFbSkip', days: 'ctgFbDays' };
+  function fbGet(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function fbSet(k, v) { try { localStorage.setItem(k, String(v)); } catch (e) {} }
+  function fbDay() { try { return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' }); } catch (e) { return new Date().toISOString().slice(0, 10); } }
+  function fbRoundNow() { return fbDay().slice(0, 7); }
+  function fbEligible() {
+    var d = fbDay(), a = fbGet(FB_K.days).split(',').filter(Boolean);
+    if (a.indexOf(d) < 0) { a.push(d); a = a.slice(-5); fbSet(FB_K.days, a.join(',')); }
+    if (a.length < 3) return false;
+    var now = Date.now(), r = fbRoundNow();
+    if (now - (Number(fbGet(FB_K.last)) || 0) < 30 * 864e5) return false;
+    if (now < (Number(fbGet(FB_K.snooze)) || 0)) return false;
+    if (fbGet(FB_K.round) !== r) { fbSet(FB_K.round, r); fbSet(FB_K.dis, 0); }
+    return fbGet(FB_K.skip) !== r;
+  }
+  function fbBlocked() {
+    var lg = document.getElementById('login'), um = document.getElementById('uMenu');
+    return S.review || document.hidden || CUR_TAB !== 'land' || !!document.querySelector('.det-back, .raw-back, .toast') || (lg && !lg.classList.contains('hidden')) || (um && !um.classList.contains('hidden')) || document.documentElement.style.overflow === 'hidden';
+  }
+  function fbSchedule() {
+    if (FB.timer || FB.shown || FB.open || !fbEligible()) return;
+    FB.timer = setTimeout(fbAuto, 8000);
+  }
+  function fbAuto() {
+    FB.timer = 0;
+    if (FB.shown || FB.open) return;
+    if (fbBlocked()) { if (++FB.tries < 3) FB.timer = setTimeout(fbAuto, 10000); return; }
+    FB.shown = true; fbOpen(true);
+  }
+  function fbOpenMenu() { document.getElementById('uMenu').classList.add('hidden'); fbOpen(false); }
+  function fbOpen(auto) {
+    if (FB.open) return;
+    FB.open = true; FB.auto = !!auto; FB.cfg = null; FB.step = 0; FB.sc = {}; FB.use = ''; FB.note = ''; FB.busy = false; FB.err = '';
+    fbLoad(function () { fbRender(); if (!auto) { var f = document.querySelector('#fbBox .chip'); if (f) f.focus(); } });
+  }
+  function fbLoad(cb) {
+    google.script.run.withSuccessHandler(function (c) { if (!FB.open) return; FB.cfg = c; cb(); })
+      .withFailureHandler(function () { if (!FB.cfg) { FB.open = false; if (!FB.auto) toast(t('fbLoadErr')); } }).getFeedbackConfig(LANG);
+  }
+  function fbReload() { fbLoad(fbRender); }
+  function fbClose() { var b = document.getElementById('fbBox'); if (b) b.remove(); FB.open = false; }
+  function fbDismiss() {
+    if (FB.open && FB.step < 4 && FB.auto) {
+      var n = (Number(fbGet(FB_K.dis)) || 0) + 1;
+      fbSet(FB_K.dis, n); fbSet(FB_K.snooze, Date.now() + 7 * 864e5);
+      if (n >= 2) fbSet(FB_K.skip, fbRoundNow());
+    }
+    fbClose();
+  }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && FB.open) fbDismiss(); });
+  function fbQ() { var c = FB.cfg; return FB.step < 2 ? c.scores[FB.step] : FB.step === 2 ? c.segment : c.open; }
+  function fbPick(n) {
+    var q = fbQ(), first = !FB.sc[q.id];
+    FB.sc[q.id] = n; fbRender();
+    if (first) setTimeout(function () { if (FB.open && FB.step < 2 && FB.sc[q.id]) { FB.step++; fbRender(); } }, 220);
+  }
+  function fbOpt(id) { FB.use = FB.use === id ? '' : id; FB.step = 3; fbRender(); }
+  function fbGo(d) { FB.step += d; FB.err = ''; fbRender(); }
+  function fbRender() {
+    var c = FB.cfg; if (!c || !FB.open) return;
+    var box = document.getElementById('fbBox');
+    if (!box) { box = document.createElement('div'); box.id = 'fbBox'; box.className = 'fb'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-labelledby', 'fbT'); document.body.appendChild(box); }
+    var s = FB.step, h = '<div class="det-h"><div><h3 id="fbT">' + esc(t('fbTitle')) + '</h3><small>' + esc(s < 4 ? t('fbStep', { a: s + 1, b: 4 }) + ' · ' + t('fbAnon') : t('fbAnon')) + '</small></div><button class="det-x" aria-label="' + esc(t('fbClose')) + '" onclick="fbDismiss()">\u00d7</button></div><div class="det-body">';
+    if (s < 4) { h += '<div class="fb-dots">'; for (var i = 0; i < 4; i++) h += '<i' + (i <= s ? ' class="on"' : '') + '></i>'; h += '</div>'; }
+    var q = s < 4 ? fbQ() : null;
+    if (s < 2) {
+      h += '<p class="fb-q">' + esc(q.text) + '</p><div class="fb-sc" role="group" aria-label="' + esc(t('fbScale')) + '">';
+      for (var n = 1; n <= c.scale; n++) h += '<button type="button" class="chip' + (FB.sc[q.id] === n ? ' on' : '') + '" aria-pressed="' + (FB.sc[q.id] === n) + '" onclick="fbPick(' + n + ')">' + n + '</button>';
+      h += '</div><div class="fb-ends"><span>1 · ' + esc(c.low) + '</span><span>' + c.scale + ' · ' + esc(c.high) + '</span></div>';
+      h += '<div class="fb-nav"><button type="button" class="fb-link" onclick="fbGo(-1)"' + (s ? '' : ' style="visibility:hidden"') + '>' + esc(t('fbBack')) + '</button>' + (FB.sc[q.id] ? '<button type="button" class="tb-add" onclick="fbGo(1)">' + esc(t('fbNext')) + '</button>' : '') + '</div>';
+    } else if (s === 2) {
+      h += '<p class="fb-q">' + esc(q.text) + '</p>';
+      q.options.forEach(function (o) { h += '<button type="button" class="chip fb-opt' + (FB.use === o.id ? ' on' : '') + '" aria-pressed="' + (FB.use === o.id) + '" onclick="fbOpt(\'' + o.id + '\')">' + esc(o.text) + '</button>'; });
+      h += '<div class="fb-nav"><button type="button" class="fb-link" onclick="fbGo(-1)">' + esc(t('fbBack')) + '</button><button type="button" class="fb-link" onclick="fbGo(1)">' + esc(t('fbSkip')) + '</button></div>';
+    } else if (s === 3) {
+      h += '<label class="fb-q" for="fbTa" style="display:block">' + esc(q.text) + '</label><textarea class="fb-ta" id="fbTa" maxlength="' + c.maxText + '" oninput="FB.note=this.value">' + esc(FB.note) + '</textarea><p class="fb-note">' + esc(q.note) + '</p>';
+      if (FB.err) h += '<p class="fb-err" role="alert">' + esc(FB.err) + '</p>';
+      h += '<div class="fb-nav"><button type="button" class="fb-link" onclick="fbGo(-1)">' + esc(t('fbBack')) + '</button><button type="button" class="tb-add"' + (FB.busy ? ' disabled' : '') + ' onclick="fbSend()">' + esc(t(FB.busy ? 'fbSending' : 'fbSend')) + '</button></div>';
+    } else {
+      h += '<div class="fb-done"><b>' + esc(t('fbThanks')) + '</b><span>' + esc(t('fbThanksSub')) + '</span></div><div class="fb-nav"><button type="button" class="tb-add" onclick="fbClose()">' + esc(t('fbClose')) + '</button></div>';
+    }
+    box.innerHTML = h + '</div>';
+  }
+  function fbSend() {
+    if (FB.busy) return;
+    var c = FB.cfg, ids = c.scores.map(function (q) { return q.id; });
+    for (var i = 0; i < ids.length; i++) if (!FB.sc[ids[i]]) { FB.step = i; FB.err = ''; fbRender(); return; }
+    var ta = document.getElementById('fbTa'); if (ta) FB.note = ta.value;
+    FB.busy = true; FB.err = ''; fbRender();
+    google.script.run.withSuccessHandler(function (r) {
+      FB.busy = false;
+      if (r && r.ok) { fbSet(FB_K.last, Date.now()); fbSet(FB_K.dis, 0); FB.step = 4; } else FB.err = t('fbErr');
+      if (FB.open) fbRender();
+    }).withFailureHandler(function () { FB.busy = false; FB.err = t('fbErr'); if (FB.open) fbRender(); })
+      .submitFeedback({ language: LANG, scores: FB.sc, segment: FB.use, note: FB.note });
+  }
+  setTimeout(function () { if (ME) fbSchedule(); }, 0); // after the name is read
+
   // ---------- Welcome page (name), landing page, user menu ----------
   function showLogin() {
     document.getElementById('login').classList.remove('hidden');
@@ -1120,6 +1248,7 @@ askNew: 'New question', askMore: 'Show {n} more rows', askLess: 'Show fewer', as
     document.getElementById('login').classList.add('hidden');
     document.documentElement.style.overflow = '';
     updateChip(); renderLanding(); showTab('land'); window.scrollTo(0, 0);
+    fbSchedule();
   }
   function signOut() {
     document.getElementById('uMenu').classList.add('hidden');
