@@ -1426,35 +1426,44 @@ function tbWrite_(fn) {
 function saveTimeBlock(b, by) {
   if (!tbIsManager_(by)) throw new Error('Only managers can add time blocks.');
   var day = String(b && b.day || '');
-  var person = String(b && b.person || '').trim();
+  var list = (b && b.persons instanceof Array) ? b.persons : [b && b.person];
+  var persons = [], seenP = {};
+  list.forEach(function (p) { p = String(p || '').trim(); if (p && !seenP[p.toLowerCase()]) { seenP[p.toLowerCase()] = 1; persons.push(p); } });
+  if (persons.some(function (p) { return p.toLowerCase() === 'everyone'; })) persons = ['Everyone'];
   var from = Number(b && b.from), to = Number(b && b.to);
   var reason = String(b && b.reason || '').trim().slice(0, 60);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !person || person.length > 40) throw new Error('Check the day and the person.');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error('Check the day.');
+  if (!persons.length || persons.length > 60 || persons.some(function (p) { return p.length > 40; })) throw new Error('Choose who the block is for.');
+  if (!reason) throw new Error('Type the reason.');
   if (isNaN(from) || isNaN(to) || from < 0 || to > 1440 || to <= from) throw new Error('Check the times: the end must be after the start.');
   if ((from >= 720 && from < 780) || (to > 720 && to <= 780)) throw new Error('A time block cannot start or end during lunch (12:00 PM to 1:00 PM). Split it around lunch.');
   return tbWrite_(function (ss) {
     var sh = ss.getSheetByName('TIME BLOCKS');
     if (!sh) throw new Error('The TIME BLOCKS tab is missing.');
     var tz = ss.getSpreadsheetTimeZone();
-    var row = Math.max(sh.getLastRow(), 4) + 1;
-    sh.getRange(row, 1, 1, 8).setValues([[Utilities.parseDate(day, tz, 'yyyy-MM-dd'), person, from / 1440, to / 1440, reason, String(by).trim(), new Date(), Utilities.getUuid().slice(0, 8)]]);
-    sh.getRange(row, 1).setNumberFormat('m/d/yyyy');
-    sh.getRange(row, 3, 1, 2).setNumberFormat('h:mm AM/PM');
-    sh.getRange(row, 7).setNumberFormat('m/d/yyyy h:mm AM/PM');
+    var row = Math.max(sh.getLastRow(), 4) + 1, now = new Date(), dayDate = Utilities.parseDate(day, tz, 'yyyy-MM-dd');
+    // one row per person (the CG Inventory App formulas match one name per row)
+    var rows = persons.map(function (p) { return [dayDate, p, from / 1440, to / 1440, reason, String(by).trim(), now, Utilities.getUuid().slice(0, 8)]; });
+    sh.getRange(row, 1, rows.length, 8).setValues(rows);
+    sh.getRange(row, 1, rows.length, 1).setNumberFormat('m/d/yyyy');
+    sh.getRange(row, 3, rows.length, 2).setNumberFormat('h:mm AM/PM');
+    sh.getRange(row, 7, rows.length, 1).setNumberFormat('m/d/yyyy h:mm AM/PM');
   });
 }
+// id can be several ids separated by commas (the app shows one line per meeting for all the people in it)
 function deleteTimeBlock(id, by) {
   if (!tbIsManager_(by)) throw new Error('Only managers can delete time blocks.');
-  id = String(id || '');
-  if (!id) throw new Error('No block.');
+  var want = {}, n = 0;
+  String(id || '').split(',').forEach(function (x) { x = x.trim(); if (x) { want[x] = 1; n++; } });
+  if (!n) throw new Error('No block.');
   return tbWrite_(function (ss) {
     var sh = ss.getSheetByName('TIME BLOCKS');
     if (!sh) throw new Error('The TIME BLOCKS tab is missing.');
     var last = sh.getLastRow();
     if (last < 5) return;
     var ids = sh.getRange(5, 8, last - 4, 1).getValues();
-    for (var i = 0; i < ids.length; i++) {
-      if ((String(ids[i][0]) || ('r' + (i + 5))) === id) { sh.deleteRow(i + 5); return; }
+    for (var i = ids.length - 1; i >= 0; i--) {
+      if (want[String(ids[i][0]) || ('r' + (i + 5))]) sh.deleteRow(i + 5);
     }
   });
 }
