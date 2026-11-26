@@ -3,7 +3,7 @@
 
 var SPREADSHEET_ID = '1ZCSHtPryT8Y13g7PL3pa-k62X2OC5j13YkYMh0R5maA';
 var SHEET_NAME = 'DASH';
-var MANAGERS = ['Dago', 'Jessica', 'Andrej'];
+var MANAGERS = ['Dago', 'Jessica', 'Andrej', 'Mika'];
 
 var NEW_APP_URL = 'https://cascadetropicals.github.io/ctg-dash-app/';
 
