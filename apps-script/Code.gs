@@ -1189,6 +1189,7 @@ function getWorkWeek() {
   return {
     prioOk: prioOk, plan: plan, planLines: planLines, missing: false, week: String(week), target: Number(target) || 0, overview: overview, items: items,
     readAt: { ms: Date.now(), txt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'M/d h:mm a z') },
+    planSheetUrl: 'https://docs.google.com/spreadsheets/d/1OK8tZaGvYjAKAPHNaqFfOqk0U9WfCxOTJscKKHY9LO4/edit?gid=969584319#gid=969584319&range=B14',
     sheetUrl: 'https://docs.google.com/spreadsheets/d/1CD6mirTQD70kw1Y1oR37-gbTuUoezTGtK5dwTH3XqVA/edit?gid=1205559600#gid=1205559600&range=A1'
   };
 }
