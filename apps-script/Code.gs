@@ -1482,13 +1482,88 @@ function deleteTimeBlock(id, by) {
   });
 }
 
+// ---------- Feedback popup (anonymous, about once a month) ----------
+// All texts, questions and limits are here. The FEEDBACK tab only receives the answers (no names, no devices, no exact times).
+var FEEDBACK_CONFIG = {
+  app: 'CTG App', version: 'v85', tab: 'FEEDBACK', mailTo: 'cttechsupportdev@gmail.com',
+  scale: 5, maxText: 500, maxPerRound: 300,
+  low: { en: 'Strongly disagree', es: 'Muy en desacuerdo' }, high: { en: 'Strongly agree', es: 'Muy de acuerdo' },
+  scores: [
+    { id: 'ease', en: 'The app is easy to use.', es: 'La app es fácil de usar.' },
+    { id: 'trust', en: 'I trust the information in the app.', es: 'Confío en la información de la app.' }
+  ],
+  segment: { id: 'use', en: 'How often do you use the app?', es: '¿Con qué frecuencia usas la app?', options: [
+    { id: 'daily', en: 'Daily', es: 'Todos los días' }, { id: 'weekly', en: 'A few times a week', es: 'Algunas veces por semana' }, { id: 'rare', en: 'Sometimes', es: 'A veces' } ] },
+  open: { id: 'open', en: 'Is there anything that annoys you, or any suggestion to improve the app? (optional)', es: '¿Hay algo que te moleste o alguna sugerencia para mejorar la app? (opcional)',
+    noteEn: 'Please do not write names.', noteEs: 'Por favor no escribas nombres.' }
+};
+function fbLang_(l) { return String(l) === 'es' ? 'es' : 'en'; }
+function fbRound_() { return Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM'); }
+function getFeedbackConfig(language) {
+  var C = FEEDBACK_CONFIG, L = fbLang_(language);
+  return {
+    round: fbRound_(), scale: C.scale, maxText: C.maxText, low: C.low[L], high: C.high[L],
+    scores: C.scores.map(function (q) { return { id: q.id, text: q[L] }; }),
+    segment: { id: C.segment.id, text: C.segment[L], options: C.segment.options.map(function (o) { return { id: o.id, text: o[L] }; }) },
+    open: { id: C.open.id, text: C.open[L], note: L === 'es' ? C.open.noteEs : C.open.noteEn }
+  };
+}
+// payload = { language, scores: { ease: 1-5, trust: 1-5 }, segment, note }. Nothing about the person is sent or saved.
+function submitFeedback(payload) {
+  var C = FEEDBACK_CONFIG, p = payload || {}, L = fbLang_(p.language);
+  var scores = C.scores.map(function (q) {
+    var v = Number(p.scores && p.scores[q.id]);
+    if (!(v >= 1 && v <= C.scale) || v !== Math.floor(v)) throw new Error('Check the answers.');
+    return v;
+  });
+  var seg = String(p.segment || ''), segOk = '';
+  C.segment.options.forEach(function (o) { if (o.id === seg) segOk = o.id; });
+  var note = String(p.note || '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, C.maxText);
+  var key = 'fb' + Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, [L, scores.join(), segOk, note].join('|')));
+  var cache = CacheService.getScriptCache();
+  if (cache.get(key)) return { ok: true, duplicate: true };
+  var lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  var round = fbRound_(), day = Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM-dd');
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID), sh = ss.getSheetByName(C.tab);
+    if (!sh) {
+      sh = ss.insertSheet(C.tab);
+      sh.getRange(1, 1, 3, 1).setValues([['Anonymous feedback from the popup in the app (about once a month per person). One row per answer.'], ['Scores: 1 = ' + C.low.en + ', ' + C.scale + ' = ' + C.high.en + '. No names, devices or exact times are saved.'], ['Rows are added by the app. Do not type above row 4.']]);
+      var head = ['Date', 'App', 'Version', 'Language', 'Round'].concat(['Segment'], C.scores.map(function (q) { return q.id; }), ['Note']);
+      sh.getRange(4, 1, 1, head.length).setValues([head]).setFontWeight('bold').setFontColor('#000000').setBackground(null);
+      sh.setFrozenRows(4);
+    }
+    var last = Math.max(sh.getLastRow(), 4);
+    if (last > 4) {
+      var rounds = sh.getRange(5, 5, last - 4, 1).getValues(), n = 0;
+      rounds.forEach(function (r) { if (String(r[0]) === round) n++; });
+      if (n >= C.maxPerRound) throw new Error('Feedback is full for this month.');
+    }
+    var cellNote = /^[=+\-@]/.test(note) ? "'" + note : note; // a leading apostrophe keeps = + - @ from turning into a formula
+    var row = [day, C.app, C.version, L, round, segOk].concat(scores, [cellNote]);
+    sh.getRange(last + 1, 1, 1, row.length).setValues([row]);
+    SpreadsheetApp.flush();
+    cache.put(key, '1', 60);
+  } finally { lock.releaseLock(); }
+  try {
+    var low = scores.some(function (v) { return v <= 2; }), avg = scores.reduce(function (a, b) { return a + b; }, 0) / scores.length;
+    var lines = [C.app + ' ' + C.version + ' - anonymous feedback', 'Date (Pacific): ' + day, 'Language: ' + L, 'Round: ' + round, 'Use: ' + (segOk || '(skipped)'), ''];
+    C.scores.forEach(function (q, i) { lines.push(q.en + ' ' + scores[i] + '/' + C.scale); });
+    lines.push('', 'Note: ' + (note || '(none)'));
+    MailApp.sendEmail(C.mailTo, '[' + C.app + '] Feedback: ' + (Math.round(avg * 10) / 10) + '/' + C.scale + (low ? ' - LOW SCORE' : ''), lines.join('\n'));
+  } catch (e) { Logger.log('Feedback mail failed: ' + e); }
+  return { ok: true };
+}
+
 function apiFunctions_() {
   return {
     getInit: getInit, getTasks: getTasks, saveScores: saveScores, getOverview: getOverview, getPerformance: getPerformance, getToday: getToday,
     getAccuracy: getAccuracy, getTimeline: getTimeline, getRawEntries: getRawEntries, getScoreTable: getScoreTable, startPeople: startPeople,
     startFavs: startFavs, getLinks: getLinks, saveLink: saveLink, deleteLink: deleteLink, reorderLinks: reorderLinks, renameTheme: renameTheme,
     deleteTheme: deleteTheme, reorderThemes: reorderThemes, toggleFavorite: toggleFavorite, getWorkWeek: getWorkWeek, askQuestion: askQuestion,
-    getTimeBlocks: getTimeBlocks, saveTimeBlock: saveTimeBlock, deleteTimeBlock: deleteTimeBlock
+    getTimeBlocks: getTimeBlocks, saveTimeBlock: saveTimeBlock, deleteTimeBlock: deleteTimeBlock,
+    getFeedbackConfig: getFeedbackConfig, submitFeedback: submitFeedback
   };
 }
 
