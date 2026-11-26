@@ -1137,13 +1137,13 @@ function getWorkWeek() {
   // Second table: plug and finished planting for the weeks after the incoming week (block S:Z of the tab, rows 4 and 9-10)
   var plan = null;
   try {
-    var pg = sh.getRange(9, 19, 2, 8), pd = pg.getDisplayValues(), pt = sh.getRange(4, 20).getValue(), prow = [];
-    for (var j = 0; j < 2; j++) {
+    var pg = sh.getRange(9, 19, 3, 8), pd = pg.getDisplayValues(), pt = sh.getRange(4, 20).getValue(), prow = [];
+    for (var j = 0; j < 3; j++) {
       var pa = String(pd[j][0]).trim();
       if (!pa || pa.charAt(0) === '#') continue;
       var ppl = parseFloat(String(pd[j][4]).replace(/,/g, '')), ppd = parseFloat(String(pd[j][3]).replace(/,/g, '')) || 0;
       prow.push({
-        key: /plug/i.test(pa) ? 'plug' : 'finished', area: pa, period: String(pd[j][1]), remaining: String(pd[j][2]), planted: String(pd[j][3]), planned: String(pd[j][4]),
+        key: /plug/i.test(pa) ? 'plug' : (/HB/i.test(pa) ? 'hb' : 'finished'), area: pa, period: String(pd[j][1]), remaining: String(pd[j][2]), planted: String(pd[j][3]), planned: String(pd[j][4]),
         pct: String(pd[j][5]), hours: String(pd[j][6]), workers: String(pd[j][7]),
         left: (isNaN(ppl) || ppl <= 0) ? null : Math.max(0, Math.min(1, 1 - ppd / ppl))
       });
@@ -1151,6 +1151,19 @@ function getWorkWeek() {
     var tgp = (pt === '' || isNaN(Number(pt))) ? 1 : Number(pt);
     if (prow.length) plan = { target: tgp, rows: prow };
   } catch (ePlan) { plan = null; } // the incoming table still works without it
+  // Plan lines behind the Planting weeks table (tab 'IMPORT work week lines': plug block A:N, finished block P:AC, header row 4, data from row 5)
+  var planLines = { plug: [], finished: [], hb: [] };
+  try {
+    var ls = SpreadsheetApp.openById(SPREADSHEET_ID).getSheetByName('IMPORT work week lines');
+    if (ls && ls.getLastRow() >= 5) {
+      var nu = function (x) { return Number(String(x).replace(/,/g, '')) || 0; };
+      ls.getRange(5, 1, ls.getLastRow() - 4, 45).getDisplayValues().forEach(function (r) {
+        if (String(r[0]).trim() && String(r[0]).charAt(0) !== '#') planLines.plug.push({ item: String(r[0]).trim(), genus: r[1], variety: r[2], date: r[3], loc: r[4], goal: nu(r[5]), io: nu(r[6]), units: nu(r[7]), planted: String(r[9]).toUpperCase() === 'TRUE', qty: r[10], locP: r[11], actual: r[12], why: r[13] });
+        if (String(r[15]).trim() && String(r[15]).charAt(0) !== '#') planLines.finished.push({ item: String(r[15]).trim(), genus: r[16], variety: r[17], date: r[18], loc: r[19], goal: nu(r[20]), io: nu(r[21]), units: nu(r[22]), planted: String(r[24]).toUpperCase() === 'TRUE', qty: r[25], locP: r[26], actual: r[27], why: '' });
+        if (String(r[31]).trim() && String(r[31]).charAt(0) !== '#') planLines.hb.push({ item: String(r[31]).trim(), genus: r[32], variety: r[33], date: r[34], loc: r[35], goal: nu(r[36]), io: nu(r[37]), units: nu(r[38]), planted: String(r[40]).toUpperCase() === 'TRUE', qty: r[41], locP: r[42], actual: r[43], why: '' });
+      });
+    }
+  } catch (eLines) { planLines = { plug: [], finished: [], hb: [] }; } // the Planting weeks table still works without the lines
   var items = [];
   var last = sh.getLastRow();
   if (last >= 14) {
@@ -1174,7 +1187,7 @@ function getWorkWeek() {
     items.forEach(function (x) { var q = pm[x.id]; if (q) { x.plant = q.plant; x.prio = q.prio; } });
   } catch (e) { prioOk = false; } // the Work week still works without priorities
   return {
-    prioOk: prioOk, plan: plan, missing: false, week: String(week), target: Number(target) || 0, overview: overview, items: items,
+    prioOk: prioOk, plan: plan, planLines: planLines, missing: false, week: String(week), target: Number(target) || 0, overview: overview, items: items,
     readAt: { ms: Date.now(), txt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'M/d h:mm a z') },
     sheetUrl: 'https://docs.google.com/spreadsheets/d/1CD6mirTQD70kw1Y1oR37-gbTuUoezTGtK5dwTH3XqVA/edit?gid=1205559600#gid=1205559600&range=A1'
   };
