@@ -1134,6 +1134,23 @@ function getWorkWeek() {
       left: (isNaN(planned) || planned <= 0) ? null : Math.max(0, Math.min(1, 1 - planted / planned)) // same rule as the status bar in the source sheet
     });
   }
+  // Second table: plug and finished planting for the weeks after the incoming week (block S:Z of the tab, rows 4 and 9-10)
+  var plan = null;
+  try {
+    var pg = sh.getRange(9, 19, 2, 8), pd = pg.getDisplayValues(), pt = sh.getRange(4, 20).getValue(), prow = [];
+    for (var j = 0; j < 2; j++) {
+      var pa = String(pd[j][0]).trim();
+      if (!pa || pa.charAt(0) === '#') continue;
+      var ppl = parseFloat(String(pd[j][4]).replace(/,/g, '')), ppd = parseFloat(String(pd[j][3]).replace(/,/g, '')) || 0;
+      prow.push({
+        key: /plug/i.test(pa) ? 'plug' : 'finished', area: pa, period: String(pd[j][1]), remaining: String(pd[j][2]), planted: String(pd[j][3]), planned: String(pd[j][4]),
+        pct: String(pd[j][5]), hours: String(pd[j][6]), workers: String(pd[j][7]),
+        left: (isNaN(ppl) || ppl <= 0) ? null : Math.max(0, Math.min(1, 1 - ppd / ppl))
+      });
+    }
+    var tgp = (pt === '' || isNaN(Number(pt))) ? 1 : Number(pt);
+    if (prow.length) plan = { target: tgp, rows: prow };
+  } catch (ePlan) { plan = null; } // the incoming table still works without it
   var items = [];
   var last = sh.getLastRow();
   if (last >= 14) {
@@ -1157,7 +1174,7 @@ function getWorkWeek() {
     items.forEach(function (x) { var q = pm[x.id]; if (q) { x.plant = q.plant; x.prio = q.prio; } });
   } catch (e) { prioOk = false; } // the Work week still works without priorities
   return {
-    prioOk: prioOk, missing: false, week: String(week), target: Number(target) || 0, overview: overview, items: items,
+    prioOk: prioOk, plan: plan, missing: false, week: String(week), target: Number(target) || 0, overview: overview, items: items,
     readAt: { ms: Date.now(), txt: Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'M/d h:mm a z') },
     sheetUrl: 'https://docs.google.com/spreadsheets/d/1CD6mirTQD70kw1Y1oR37-gbTuUoezTGtK5dwTH3XqVA/edit?gid=1205559600#gid=1205559600&range=A1'
   };
@@ -1414,6 +1431,7 @@ function saveTimeBlock(b, by) {
   var reason = String(b && b.reason || '').trim().slice(0, 60);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !person || person.length > 40) throw new Error('Check the day and the person.');
   if (isNaN(from) || isNaN(to) || from < 0 || to > 1440 || to <= from) throw new Error('Check the times: the end must be after the start.');
+  if ((from >= 720 && from < 780) || (to > 720 && to <= 780)) throw new Error('A time block cannot start or end during lunch (12:00 PM to 1:00 PM). Split it around lunch.');
   return tbWrite_(function (ss) {
     var sh = ss.getSheetByName('TIME BLOCKS');
     if (!sh) throw new Error('The TIME BLOCKS tab is missing.');
