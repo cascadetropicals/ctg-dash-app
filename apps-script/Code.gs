@@ -1403,20 +1403,43 @@ function tbIsManager_(name) {
   for (var i = 0; i < MANAGERS.length; i++) if (MANAGERS[i].toLowerCase() === n) return true;
   return false;
 }
+var TB_DAYS_ = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+// weekdays text of a repeating block ("Mon,Wed"), in week order; empty = a one-day block
+function tbDays_(v) {
+  var have = {};
+  String(v || '').split(',').forEach(function (x) { have[x.trim()] = 1; });
+  return TB_DAYS_.filter(function (d) { return have[d]; });
+}
 function getTimeBlocks() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID), tz = ss.getSpreadsheetTimeZone();
   var sh = ss.getSheetByName('TIME BLOCKS');
   if (!sh) return { error: 'nosheet', blocks: [], people: [], managers: MANAGERS };
   var cutKey = Utilities.formatDate(new Date(Date.now() - 90 * 86400000), tz, 'yyyy-MM-dd');
-  var last = sh.getLastRow(), blocks = [];
+  var tzP = 'America/Los_Angeles';
+  var todayKey = Utilities.formatDate(new Date(), tzP, 'yyyy-MM-dd'), hiKey = Utilities.formatDate(new Date(Date.now() + 14 * 86400000), tzP, 'yyyy-MM-dd');
+  var last = sh.getLastRow(), blocks = [], series = [];
   if (last >= 5) {
-    sh.getRange(5, 1, last - 4, 8).getValues().forEach(function (r, i) {
+    sh.getRange(5, 1, last - 4, 10).getValues().forEach(function (r, i) {
       if (!(r[0] instanceof Date) || !String(r[1]).trim()) return;
       var f = tbMin_(r[2], tz), t = tbMin_(r[3], tz);
       if (f < 0 || t <= f) return;
       var day = Utilities.formatDate(r[0], tz, 'yyyy-MM-dd');
-      if (day < cutKey) return;
-      blocks.push({ id: String(r[7] || '') || ('r' + (i + 5)), day: day, person: String(r[1]).trim(), from: f, to: t, reason: String(r[4] || '').trim(), by: String(r[5] || '').trim() });
+      var id = String(r[7] || '') || ('r' + (i + 5)), person = String(r[1]).trim(), reason = String(r[4] || '').trim(), by = String(r[5] || '').trim();
+      var days = tbDays_(r[8]);
+      if (!days.length) {
+        if (day < cutKey) return;
+        blocks.push({ id: id, day: day, person: person, from: f, to: t, reason: reason, by: by });
+        return;
+      }
+      // repeating block (column I = weekdays, column J = last day, empty = no end): one occurrence per matching day from the start day
+      var until = r[9] instanceof Date ? Utilities.formatDate(r[9], tz, 'yyyy-MM-dd') : '';
+      if (!until || until > todayKey) series.push({ id: id, person: person, from: f, to: t, reason: reason, by: by, days: days, start: day, until: until });
+      var k = day > cutKey ? day : cutKey, end = until && until < hiKey ? until : hiKey;
+      for (var n = 0; k <= end && n < 400; n++) {
+        var ms = new Date(k + 'T12:00:00Z').getTime();
+        if (days.indexOf(TB_DAYS_[(new Date(ms).getUTCDay() + 6) % 7]) >= 0) blocks.push({ id: id, day: k, person: person, from: f, to: t, reason: reason, by: by, rep: 1 });
+        k = Utilities.formatDate(new Date(ms + 86400000), 'UTC', 'yyyy-MM-dd');
+      }
     });
   }
   blocks.sort(function (a, b) { return a.day < b.day ? 1 : (a.day > b.day ? -1 : a.from - b.from); });
@@ -1428,7 +1451,7 @@ function getTimeBlocks() {
     if (n && !seen[n]) { seen[n] = 1; people.push(n); }
   });
   people.sort();
-  return { blocks: blocks, people: people, managers: MANAGERS };
+  return { blocks: blocks, series: series, people: people, managers: MANAGERS };
 }
 function tbWrite_(fn) {
   var lock = LockService.getScriptLock();
@@ -1446,6 +1469,7 @@ function saveTimeBlock(b, by) {
   if (persons.some(function (p) { return p.toLowerCase() === 'everyone'; })) persons = ['Everyone'];
   var from = Number(b && b.from), to = Number(b && b.to);
   var reason = String(b && b.reason || '').trim().slice(0, 60);
+  var rep = tbDays_((b && b.repeat instanceof Array ? b.repeat : []).join(','));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error('Check the day.');
   if (!persons.length || persons.length > 60 || persons.some(function (p) { return p.length > 40; })) throw new Error('Choose who the block is for.');
   if (!reason) throw new Error('Type the reason.');
@@ -1457,8 +1481,8 @@ function saveTimeBlock(b, by) {
     var tz = ss.getSpreadsheetTimeZone();
     var row = Math.max(sh.getLastRow(), 4) + 1, now = new Date(), dayDate = Utilities.parseDate(day, tz, 'yyyy-MM-dd');
     // one row per person (the CG Inventory App formulas match one name per row)
-    var rows = persons.map(function (p) { return [dayDate, p, from / 1440, to / 1440, reason, String(by).trim(), now, Utilities.getUuid().slice(0, 8)]; });
-    sh.getRange(row, 1, rows.length, 8).setValues(rows);
+    var rows = persons.map(function (p) { return [dayDate, p, from / 1440, to / 1440, reason, String(by).trim(), now, Utilities.getUuid().slice(0, 8), rep.join(','), '']; });
+    sh.getRange(row, 1, rows.length, 10).setValues(rows);
     sh.getRange(row, 1, rows.length, 1).setNumberFormat('m/d/yyyy');
     sh.getRange(row, 3, rows.length, 2).setNumberFormat('h:mm AM/PM');
     sh.getRange(row, 7, rows.length, 1).setNumberFormat('m/d/yyyy h:mm AM/PM');
@@ -1475,9 +1499,16 @@ function deleteTimeBlock(id, by) {
     if (!sh) throw new Error('The TIME BLOCKS tab is missing.');
     var last = sh.getLastRow();
     if (last < 5) return;
-    var ids = sh.getRange(5, 8, last - 4, 1).getValues();
-    for (var i = ids.length - 1; i >= 0; i--) {
-      if (want[String(ids[i][0]) || ('r' + (i + 5))]) sh.deleteRow(i + 5);
+    var tz = ss.getSpreadsheetTimeZone(), today = Utilities.formatDate(new Date(), 'America/Los_Angeles', 'yyyy-MM-dd');
+    var rows = sh.getRange(5, 1, last - 4, 10).getValues();
+    for (var i = rows.length - 1; i >= 0; i--) {
+      if (!want[String(rows[i][7]) || ('r' + (i + 5))]) continue;
+      var start = rows[i][0] instanceof Date ? Utilities.formatDate(rows[i][0], tz, 'yyyy-MM-dd') : '';
+      if (tbDays_(rows[i][8]).length && start && start < today) {
+        // a repeating block that already ran: it ends today, the past days keep it (so old hours do not change)
+        var c = sh.getRange(i + 5, 10);
+        c.setValue(Utilities.parseDate(today, tz, 'yyyy-MM-dd')); c.setNumberFormat('m/d/yyyy');
+      } else sh.deleteRow(i + 5);
     }
   });
 }
